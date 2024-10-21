@@ -1,0 +1,89 @@
+\ProcessKeyOptions[texhigh/prelude]
+
+\texhighsetclassfallback{cs}{primitive.luatex}{primitive, tex, latex}
+\texhighsetclassfallback{cs}{primitive.xetex}{primitive, tex, latex}
+\texhighsetclassfallback{cs}{primitive.uptex}{primitive, tex, latex}
+\texhighsetclassfallback{cs}{primitive.pdftex}{primitive, tex, latex}
+\texhighsetclassfallback{cs}{primitive.etex}{primitive, tex, latex}
+\texhighsetclassfallback{cs}{primitive.knuthtex}{primitive, tex, latex}
+\texhighsetclassfallback{cs}{primitive.widely}{primitive, tex, latex}
+\texhighsetclassfallback{cs}{primitive.sometex}{primitive, tex, latex}
+\texhighsetclassfallback{cs}{primitive.luametatex}{context}
+\texhighsetclassfallback{cs}{plaintex}{tex}
+\texhighsetclassfallback{cs}{latex.document}{latex}
+\texhighsetclassfallback{cs}{latex.programming}{latex}
+\texhighsetclassfallback{cs}{latex.internal}{internal, latex}
+\texhighsetclassfallback{cs}{latex.public}{latex}
+\texhighsetclassfallback{cs}{latex3.primitive}{latex3.function.kernel, latex3.function, latex3, primitive}
+\texhighsetclassfallback{cs}{latex3.variable}{latex3, latex}
+\texhighsetclassfallback{cs}{latex3.function}{latex3, latex}
+\texhighsetclassfallback{cs}{latex3.variable.kernel}{latex3.kernel, latex3.variable, latex3}
+\texhighsetclassfallback{cs}{latex3.function.kernel}{latex3.kernel, latex3.function, latex3}
+\texhighsetclassfallback{cs}{latex3.variable.internal}{internal, latex3.variable, latex3}
+\texhighsetclassfallback{cs}{latex3.variable.public}{latex3.variable, latex3}
+\texhighsetclassfallback{cs}{latex3.function.internal}{internal, latex3.function, latex3}
+\texhighsetclassfallback{cs}{latex3.function.public}{latex3.function, latex3}
+\texhighsetclassfallback{cs}{math}{tex, latex}
+\texhighsetclassfallback{cs}{symbol}{tex, latex}
+\texhighsetclassfallback{rs}{math.inline}{math}
+\texhighsetclassfallback{re}{math.inline}{math}
+
+\@ifpackageloaded{xcolor}{}{\RequirePackage{xcolor}}
+\RequirePackage{ninecolors}
+
+\THSaveStyle{basic}{%
+  \THSetClassBP{?}
+    {\discretionary
+      {\hbox{{\color{gray8}\ $\hookleftarrow$}}}
+      {\hbox{{\color{gray8}$\hookrightarrow$\ }}}{}}%
+  \THSetClassCS{texhigh}{{\fboxsep\z@ % for texhigh package itself
+    \fcolorbox{yellow9}{yellow9}{\strut\color{black}\bfseries#1#2}}}
+  \THSetClassCS{latex3.primitive}{\mbox{\color{red4}\bfseries#1#2}}%
+  \THSetClassCS{latex3.kernel}{\mbox{\color{red4}\bfseries#1#2}}%
+  \THSetClassCS{latex3.variable}{\mbox{\color{azure6}#1#2}}%
+  \THSetClassCS{latex3.function}{\mbox{\color{green5}#1#2}}%
+  \THSetClassCS{internal}{\mbox{\color{brown3}#1#2}}%
+  \THSetClassCS{latex.document}{\mbox{\color{magenta4}\bfseries#1#2}}%
+  \THSetClassCS{latex.programming}{\mbox{\color{yellow7}#1#2}}%
+  \THSetClassCS{latex}{\mbox{\color{yellow8}#1#2}}%
+  \THSetClassCS{primitive}{\texhigh@underline{\color{purple5}\bfseries#1#2}}%
+  \THSetClassCS{?}{\mbox{\color{magenta5}#1#2}}%
+  \THSetClassCH{group}{\mbox{\color{purple3}#1}}%
+  \THSetClassCH{?}{\mbox{#1}}%
+  \THSetClassRS{comment}{\begingroup\color{gray}\THSetPlainStyle{cs}}%
+  \THSetClassRE{comment}{\endgroup}%
+  \THSetClassRS{parameter}{\begingroup\color{magenta2}}%
+  \THSetClassRE{parameter}{\endgroup}%
+  \THSetClassRS{math}{\begingroup\color{cyan7}}%
+  \THSetClassRE{math}{\endgroup}%
+}
+\THUseSavedStyle{basic}
+
+\if@texhighload@color
+  \relax
+\fi
+\newbox\texhigh@picturebox 
+\if@texhighload@tikz
+  \RequirePackage{tikz}
+  \usetikzlibrary{shadings}
+  \usetikzlibrary{fill.image}
+  \protected\def\texhigh@shadetext#1#2{%
+    \setbox\texhigh@picturebox=\hbox{{\texhigh@pdfliteral{7 Tr }#2}}%
+    \tikz[baseline=0,line width=0pt]\path\pgfextra{\rlap{\copy\texhigh@picturebox}}
+      [#1] (0,-\dp\texhigh@picturebox) rectangle (\wd\texhigh@picturebox,\ht\texhigh@picturebox);}
+\fi
+
+
+\long\def\texhigh@underline#1{\leavevmode\setbox\z@\hbox{{#1}}%
+  \hb@xt@\wd\z@{\rlap{\unhcopy\z@}%
+    \kern.05em\vrule height-.25ex depth.4ex width\dimexpr\wd\z@-.1em\relax \kern.05em}}
+\tikzset{texhigh/.is family,
+  texhigh/gradient primitive/.style={left color=blue,right color=cyan},
+  texhigh/gradient ?/.style={left color=red,right color=blue},
+  texhigh/gradient-style/.style={texhigh/gradient #1}}
+\THSaveStyle{tikz.gradient}{%
+  \THSetClassCS{latex}{\texhigh@underline{\color{purple}\bfseries#1#2}}
+  \THSetClassCS{primitive}
+    {\texhigh@shadetext{texhigh/gradient-style=primitive}{\bfseries #1#2}}%
+  \THSetClassCS{?}{\texhigh@shadetext{texhigh/gradient-style=?}{#1#2}}%
+}
