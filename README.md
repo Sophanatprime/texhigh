@@ -1,0 +1,2 @@
+# texhigh
+Highlighting TeX file.
