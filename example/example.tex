@@ -2,8 +2,32 @@
 % !TEX options=-synctex=1 -shell-escape -interaction=nonstopmode -file-line-error "%DOC%"
 \documentclass[zihao=-4]{ctexart}
 \usepackage[hmargin=2cm,vmargin=2.4cm]{geometry}
+\usepackage[many]{tcolorbox}
 \usepackage[color,tikz]{texhigh}
-
+\SetKeys[texhigh]{
+  font=\ttfamily\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}
+}
+\tcbset{listing engine=texhigh}
+\newcounter{example}
+\newtcblisting[use counter=example, number format=\arabic]
+  {examcode}[2][]{listing and text, 
+  title=代码 \thetcbcounter, enhanced,
+  comment={#2},
+  sharp corners=downhill, arc=12pt, %skin=bicolor,
+  fontupper=\linespread{1}\selectfont, left=6pt,
+  colback=blue!1!white, colframe=blue!75!black,colbacklower=white,
+  segmentation style={draw=blue,thick,solid},
+  attach boxed title to top right={yshift=-\tcboxedtitleheight},
+  boxed title style={
+    colframe=blue!75!black,colback=blue!15!white,
+    sharp corners=downhill,arc=12pt,
+  },
+  coltitle=blue!90!black, fonttitle=\bfseries,
+  before skip balanced=2bp plus .5\baselineskip,
+  after skip balanced=2bp plus .5\baselineskip,
+  breakable,
+  #1
+}
 \begin{document}
 
 \title{高亮 \TeX 和 \LaTeX3 代码——使用\textsf{texhigh} 宏包}
@@ -33,27 +57,52 @@ texhigh\footnote{https://github.com/Sophanatprime/texhigh-rs}，
 每个类型都有一些命令用于更改它们的“类别”的显示效果，如，对于一个控制序列，可以使用
 \texhighverb|\THSetClassCS| 改变显示效果。可以为它们设置前景色、背景色，
 甚至渐变色和底纹等等。实际上普通文字可以显示成什么效果，它们就可以做到同样的效果。
+具体修改方式可以参考文末 \texttt{basic} 样式的源码。
 
-识别行内数学公式：\texhighverb!公式 $ \int_a^b x^2 dx = \frac{1}{3} x^3 |_a^b $!。
+\textsf{texhigh} 利用 \textsf{tikz} 实现了渐变和底纹效果，同时也可直接集成到
+\textsf{tcolorbox} 宏包中。只需要在加载 \textsf{texhigh} 之前加载这几个宏包。
+\begin{examcode}[listing only]{}
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\usepackage{texhigh}
+\tcbset{listing engine=texhigh} % 使用这个即可切换至 texhigh 
+若使用 xeCJK，即在 XeLaTeX 中使用 ctex，最好设置
+\SetKeys[texhigh]{
+  font=\ttfamily\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}
+}
+这样可避免在显示代码时中英文之间出现不必要的空格。
+\end{examcode}
+
+识别行内数学公式：
+\begin{examcode}{}
+\texhighverb!公式 $ \int_a^b x^2 dx = \frac{1}{3} x^3 |_a^b $!。
+\end{examcode}
 
 渐变：
+\begin{examcode}[texhigh options={use-ctab=latex3}]{}
 \texhighverb[style=tikz.gradient, use-ctab=latex3, config-file=config.cfg]|\sys_get_shell:nnNTF|
+\end{examcode}
 
 底纹：
+\begin{examcode}[texhigh options={use-ctab=latexcode}]{}
 \makeatletter
 \def\myshadetext#1#2{\texhigh@shadetext{#1}{\bfseries #2}}
 \makeatother
 {\LARGE
+% 在加载 texhigh 之前加载 tikz 宏包！
+% 使用 grass.png 作为文字底纹，依赖 tikz 的 fill.image 库，会自动加载这个库。
 \texhighverb[use-ctab=latex3, this-cs=\myshadetext{fill stretch image=grass.png}]
-  |\sys_get_shell:nnNTF|
+|\sys_get_shell:nnNTF| 
 }
+\end{examcode}
 
-中文命令识别：
+中文命令识别（\TeX 原语带有下划线）：
+\begin{examcode}[texhigh use ctab=cjk]{}
 \begin{texhigh}[output=\jobname.texhigh, use-ctab=cjk]
-% 测试注释
-\def\好好好{中文 Good}
-\好好好\relax 
+  \def\好好好{中文 Good}
+  \好好好\relax 
 \end{texhigh}
+\end{examcode}
 
 \bigskip
 \noindent\texhighverb|%%% 以下输出本文源码 %%%|
@@ -64,6 +113,7 @@ texhigh\footnote{https://github.com/Sophanatprime/texhigh-rs}，
 \noindent\texhighverb|%%%---- File: texhigh.sty ----%%%|
 \texhighfile[use-ctab=latex3code, config-file=config.cfg]{texhigh.sty}
 
+\vspace{1cm}
 \noindent\texhighverb|%%%---- File: prelude.ths ----%%%|
 \texhighfile[use-ctab=latexcode, config-file=config.cfg]{prelude.ths}
 
