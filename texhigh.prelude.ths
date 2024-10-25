@@ -37,8 +37,8 @@
       {\hbox{{\color{gray8}\ $\hookleftarrow$}}}
       {\hbox{{\color{gray8}$\hookrightarrow$\ }}}{}}%
   \THSetClassCS{texhigh}{{\fboxsep\z@ % for texhigh package itself
-    \fcolorbox{yellow9}{yellow9}{\strut\color{black}\bfseries#1#2}}}
-  \THSetClassCS{latex3.primitive}{\mbox{\color{red4}\bfseries#1#2}}%
+    \fcolorbox{yellow9}{yellow9}{\strut\color{black}\bfseries#1#2}}}%
+  \THSetClassCS{latex3.primitive}{\mbox{\color{red4}\bfseries#1#2}}% #1=escape char, #2=cs name
   \THSetClassCS{latex3.kernel}{\mbox{\color{red4}\bfseries#1#2}}%
   \THSetClassCS{latex3.variable}{\mbox{\color{azure6}#1#2}}%
   \THSetClassCS{latex3.function}{\mbox{\color{green5}#1#2}}%
@@ -59,9 +59,14 @@
 }
 \THUseSavedStyle{basic}
 
+\long\def\texhigh@underline#1{\leavevmode\setbox\z@\hbox{{#1}}%
+  \hb@xt@\wd\z@{\rlap{\unhcopy\z@}%
+    \kern.05em\vrule height-.25ex depth.4ex width\dimexpr\wd\z@-.1em\relax \kern.05em}}
+
 \if@texhighload@color
   \relax
 \fi
+\@ifpackageloaded{tikz}{\@texhighload@tikztrue}{}
 \newbox\texhigh@picturebox 
 \if@texhighload@tikz
   \RequirePackage{tikz}
@@ -71,12 +76,8 @@
     \setbox\texhigh@picturebox=\hbox{{\texhigh@pdfliteral{7 Tr }#2}}%
     \tikz[baseline=0,line width=0pt]\path\pgfextra{\rlap{\copy\texhigh@picturebox}}
       [#1] (0,-\dp\texhigh@picturebox) rectangle (\wd\texhigh@picturebox,\ht\texhigh@picturebox);}
-\fi
 
 
-\long\def\texhigh@underline#1{\leavevmode\setbox\z@\hbox{{#1}}%
-  \hb@xt@\wd\z@{\rlap{\unhcopy\z@}%
-    \kern.05em\vrule height-.25ex depth.4ex width\dimexpr\wd\z@-.1em\relax \kern.05em}}
 \tikzset{texhigh/.is family,
   texhigh/gradient primitive/.style={left color=blue,right color=cyan},
   texhigh/gradient ?/.style={left color=red,right color=blue},
@@ -87,3 +88,25 @@
     {\texhigh@shadetext{texhigh/gradient-style=primitive}{\bfseries #1#2}}%
   \THSetClassCS{?}{\texhigh@shadetext{texhigh/gradient-style=?}{#1#2}}%
 }
+\fi
+
+\@ifpackageloaded{tcolorbox}{
+  \tcbuselibrary{listings@core}
+  \def\tcb@texhigh@file#1#2{%
+    {\edef\tcb@temp{\texhighfile[{\unexpanded\expandafter{#1}}]}\tcb@temp{#2}}}
+  \def\tcb@texhigh@uselistinglisting{\tcb@texhigh@file\kvtcb@texhighoptions\kvtcb@listingfile}
+  \def\tcb@texhigh@usetemplisting{\tcb@texhigh@file\kvtcb@texhighoptions\kvtcb@tempfile}
+  \def\tcb@texhigh@doc@usetemplisting{\tcb@texhigh@file\kvtcb@doctexhighoptions\kvtcb@tempfile}
+%
+  \tcbset{
+    texhigh options/.store in=\kvtcb@texhighoptions,
+    texhigh options=,
+    texhigh config file/.style={texhigh options={config-file={#1}}},
+    texhigh ctab file/.style={texhigh options={ctab-file={#1}}},
+    texhigh use ctab/.style={texhigh options={use-ctab={#1}}},
+    texhigh style/.style={texhigh options={style={#1}}},
+    listing engine/texhigh/.code={\let\tcbuselistinglisting\tcb@texhigh@uselistinglisting
+      \let\tcbusetemplisting\tcb@texhigh@usetemplisting
+      \let\tcb@doc@usetemplisting\tcb@texhigh@doc@usetemplisting},
+  }
+}{}

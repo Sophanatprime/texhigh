@@ -206,7 +206,7 @@
     \keys_set:nn { texhigh } {#2}
     \__texhigh_options:
     \__texhigh_get_text:n {#3}
-    \group_end:
+    \group_end: \ignorespaces
   }
 \NewDocumentCommand\texhighfile{ +O{} m }
   {
@@ -324,4 +324,5 @@
   }
 
 \ProcessKeyOptions[texhigh/options]
-\texhighloadstyle{prelude}
+
+\texhighloadstyle{texhigh.prelude}
