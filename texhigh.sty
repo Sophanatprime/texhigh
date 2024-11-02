@@ -147,7 +147,7 @@
 \iow_new:N \g__texhigh_verb_iow
 \cs_new_protected:Npn \__texhigh_verb_text:nn #1#2
   {
-    \iow_open:N \g__texhigh_verb_iow {#1}
+    \iow_open:Nn \g__texhigh_verb_iow {#1}
     \iow_now:Nn \g__texhigh_verb_iow {#2}
     \iow_close:N \g__texhigh_verb_iow
   }
@@ -155,10 +155,10 @@
   {
     \@bsphack
     \iow_open:Nn \g__texhigh_verb_iow {#1}
-    \let\do\@makeother\dospecials
+    \let\do\@makeother \dospecials
     \catcode`\^^M\active
     \def\verbatim@processline
-      { \iow_now:Ne \g__texhigh_verb_iow {\the\verbatim@line} }
+      { \iow_now:NV \g__texhigh_verb_iow \verbatim@line }
     \verbatim@start
   }
 \cs_new_protected:Npn \__texhigh_verb_end:
