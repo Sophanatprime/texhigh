@@ -1,5 +1,23 @@
 \ProcessKeyOptions[texhigh/prelude]
 
+\THSetCharReplacement{\ }{\textvisiblespace}
+\THSetCharReplacement{\^^I}{\mbox{\THcolor{gray8}$\rightarrow$}}
+
+\texhighsetclassfallback{ch}{group.0}{group}
+\texhighsetclassfallback{ch}{group.1}{group}
+\texhighsetclassfallback{ch}{group.2}{group}
+\texhighsetclassfallback{ch}{group.3}{group}
+\texhighsetclassfallback{ch}{group.4}{group.1, group}
+\texhighsetclassfallback{ch}{group.5}{group.2, group}
+\texhighsetclassfallback{ch}{group.6}{group.3, group}
+\texhighsetclassfallback{ch}{group.7}{group.1, group}
+\texhighsetclassfallback{ch}{group.8}{group.2, group}
+\texhighsetclassfallback{ch}{group.9}{group.3, group}
+\texhighsetclassfallback{ch}{group.-1}{group.miss}
+\texhighsetclassfallback{ch}{group.-2}{group.miss}
+\texhighsetclassfallback{ch}{group.-3}{group.miss}
+\texhighsetclassfallback{ch}{group.-4}{group.miss}
+\texhighsetclassfallback{ch}{group.-5}{group.miss}
 \texhighsetclassfallback{cs}{primitive.luatex}{primitive, tex, latex}
 \texhighsetclassfallback{cs}{primitive.xetex}{primitive, tex, latex}
 \texhighsetclassfallback{cs}{primitive.uptex}{primitive, tex, latex}
@@ -31,30 +49,40 @@
 \@ifpackageloaded{xcolor}{}{\RequirePackage{xcolor}}
 \RequirePackage{ninecolors}
 
+\THSaveStyle{plain}{\THSetPlainStyle{*}}
+\THSaveStyle{plain0}{\THSetPlainStyle{bp,cs,ch,st,es,ee,pn,color}%
+  \THSetClassRS{comment}{\begingroup\THColorStatus{1}\THcolor[gray]{0.5}}%
+  \THSetClassRE{comment}{\endgroup}}
+
 \THSaveStyle{basic}{%
   \THSetClassBP{?}
     {\discretionary
-      {\hbox{{\color{gray8}\ $\hookleftarrow$}}}
-      {\hbox{{\color{gray8}$\hookrightarrow$\ }}}{}}%
-  \THSetClassCS{texhigh}{{\fboxsep\z@ % for texhigh package itself
-    \fcolorbox{yellow9}{yellow9}{\strut\color{black}\bfseries#1#2}}}%
-  \THSetClassCS{latex3.primitive}{\mbox{\color{red4}\bfseries#1#2}}% #1=escape char, #2=cs name
-  \THSetClassCS{latex3.kernel}{\mbox{\color{red4}\bfseries#1#2}}%
-  \THSetClassCS{latex3.variable}{\mbox{\color{azure6}#1#2}}%
-  \THSetClassCS{latex3.function}{\mbox{\color{green5}#1#2}}%
-  \THSetClassCS{internal}{\mbox{\color{brown3}#1#2}}%
-  \THSetClassCS{latex.document}{\mbox{\color{magenta4}\bfseries#1#2}}%
-  \THSetClassCS{latex.programming}{\mbox{\color{yellow7}#1#2}}%
-  \THSetClassCS{latex}{\mbox{\color{yellow8}#1#2}}%
-  \THSetClassCS{primitive}{\texhigh@underline{\color{purple5}\bfseries#1#2}}%
-  \THSetClassCS{?}{\mbox{\color{magenta5}#1#2}}%
-  \THSetClassCH{group}{\mbox{\color{purple3}#1}}%
+      {\hbox{{\THcolor{gray8}\ $\hookleftarrow$}}}
+      {\hbox{{\THcolor{gray8}$\hookrightarrow$\ }}}{}}%
+  \THSetClassCS{texhigh}{{\fboxsep\z@% for texhigh package itself
+    \fcolorbox{yellow9}{yellow9}{\strut\THcolor{black}\bfseries#1#2}}}%
+  \THSetClassCS{latex3.primitive}{\mbox{\THcolor{red4}\bfseries#1#2}}% #1=escape char, #2=cs name
+  \THSetClassCS{latex3.kernel}{\mbox{\THcolor{red4}\bfseries#1#2}}%
+  \THSetClassCS{latex3.variable}{\mbox{\THcolor{azure6}#1#2}}%
+  \THSetClassCS{latex3.function}{\mbox{\THcolor{green5}#1#2}}%
+  \THSetClassCS{internal}{\mbox{\THcolor{brown3}#1#2}}%
+  \THSetClassCS{latex.document}{\mbox{\THcolor{magenta4}\bfseries#1#2}}%
+  \THSetClassCS{latex.programming}{\mbox{\THcolor{yellow7}#1#2}}%
+  \THSetClassCS{latex}{\mbox{\THcolor{yellow8}#1#2}}%
+  \THSetClassCS{primitive}{\texhigh@underline{\THcolor{purple5}\bfseries#1#2}}%
+  \THSetClassCS{?}{\mbox{\THcolor{magenta5}#1#2}}%
+  \THSetClassCH{group}{\mbox{\THcolor{purple3}#1}}%
+  \THSetClassCH{group.1}{\mbox{\THcolor[HTML]{179FFF}#1}}
+  \THSetClassCH{group.2}{\mbox{\THcolor[HTML]{DA6ED6}#1}}
+  \THSetClassCH{group.3}{\mbox{\THcolor[HTML]{F8BA16}#1}}
+  \THSetClassCH{group.miss}{\mbox{\THcolor{red}#1}}%
   \THSetClassCH{?}{\mbox{#1}}%
-  \THSetClassRS{comment}{\begingroup\color{gray}\THSetPlainStyle{cs}}%
+  \THSetClassCH{digit}{\mbox{\THcolor{azure8}#1}}%
+  \THSetClassRS{comment}{\begingroup\THcolor[gray]{0.5}\THSetPlainStyle{cs,color}}%
   \THSetClassRE{comment}{\endgroup}%
-  \THSetClassRS{parameter}{\begingroup\color{magenta2}}%
+  \THSetClassRS{parameter}{\begingroup\THcolor{magenta2}}%
   \THSetClassRE{parameter}{\endgroup}%
-  \THSetClassRS{math}{\begingroup\color{cyan7}}%
+  \THSetClassRS{math}{\begingroup\THcolor{cyan7}}%
   \THSetClassRE{math}{\endgroup}%
 }
 \THUseSavedStyle{basic}
@@ -77,17 +105,16 @@
     \tikz[baseline=0,line width=0pt]\path\pgfextra{\rlap{\copy\texhigh@picturebox}}
       [#1] (0,-\dp\texhigh@picturebox) rectangle (\wd\texhigh@picturebox,\ht\texhigh@picturebox);}
 
-
-\tikzset{texhigh/.is family,
-  texhigh/gradient primitive/.style={left color=blue,right color=cyan},
-  texhigh/gradient ?/.style={left color=red,right color=blue},
-  texhigh/gradient-style/.style={texhigh/gradient #1}}
-\THSaveStyle{tikz.gradient}{%
-  \THSetClassCS{latex}{\texhigh@underline{\color{purple}\bfseries#1#2}}
-  \THSetClassCS{primitive}
-    {\texhigh@shadetext{texhigh/gradient-style=primitive}{\bfseries #1#2}}%
-  \THSetClassCS{?}{\texhigh@shadetext{texhigh/gradient-style=?}{#1#2}}%
-}
+  \tikzset{texhigh/.is family,
+    texhigh/gradient primitive/.style={left color=blue,right color=cyan},
+    texhigh/gradient ?/.style={left color=red,right color=blue},
+    texhigh/gradient-style/.style={texhigh/gradient #1}}
+  \THSaveStyle{tikz.gradient}{%
+    \THSetClassCS{latex}{\texhigh@underline{\THcolor{purple}\bfseries#1#2}}
+    \THSetClassCS{primitive}
+      {\texhigh@shadetext{texhigh/gradient-style=primitive}{\bfseries #1#2}}%
+    \THSetClassCS{?}{\texhigh@shadetext{texhigh/gradient-style=?}{#1#2}}%
+  }
 \fi
 
 \@ifpackageloaded{tcolorbox}{
@@ -99,12 +126,17 @@
   \def\tcb@texhigh@doc@usetemplisting{\tcb@texhigh@file\kvtcb@doctexhighoptions\kvtcb@tempfile}
 %
   \tcbset{
-    texhigh options/.store in=\kvtcb@texhighoptions,
+    texhigh options/.code=\edef\kvtcb@texhighoptions{\unexpanded{#1}},
     texhigh options=,
-    texhigh config file/.style={texhigh options={config-file={#1}}},
-    texhigh ctab file/.style={texhigh options={ctab-file={#1}}},
-    texhigh use ctab/.style={texhigh options={use-ctab={#1}}},
-    texhigh style/.style={texhigh options={style={#1}}},
+    texhigh options pre/.code=\edef\kvtcb@texhighoptions{\unexpanded{#1},\unexpanded\expandafter{\kvtcb@texhighoptions}},
+    texhigh options app/.code=\edef\kvtcb@texhighoptions{\unexpanded\expandafter{\kvtcb@texhighoptions,#1}},
+    texhigh gobble/.style={texhigh options app={gobble=#1}},
+    texhigh gobble/.default=auto,
+    texhigh config file/.style={texhigh options app={config-file={#1}}},
+    texhigh ctab file/.style={texhigh options app={ctab-file={#1}}},
+    texhigh use ctab/.style={texhigh options app={use-ctab={#1}}},
+    texhigh style/.style={texhigh options app={style={#1}}},
+    texhigh detect catcodes/.style={texhigh options app={lexer-catcode={#1}}},
     listing engine/texhigh/.code={\let\tcbuselistinglisting\tcb@texhigh@uselistinglisting
       \let\tcbusetemplisting\tcb@texhigh@usetemplisting
       \let\tcb@doc@usetemplisting\tcb@texhigh@doc@usetemplisting},

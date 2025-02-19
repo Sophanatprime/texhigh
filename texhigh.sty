@@ -1,4 +1,5 @@
-\ProvidesExplPackage{texhigh}{2024-10-20}{0.1.1}{highlight TeX string}
+\ProvidesExplPackage{texhigh}{2024-02-20}{0.2.0}{highlight TeX string}
+\int_new:N \l__texhigh_tmp_int
 \def\texhigh@style@ext{ths}
 \cs_new_protected:Npn \texhigh@inputstyle #1#2#3 % style, options, date
   { \@onefilewithoptions {#1}[{#2}][{#3}]\texhigh@style@ext }
@@ -9,6 +10,10 @@
 \cs_new_protected:Npn \THnlPlain { \TH@nl }
 \cs_new_protected:Npn \THin #1 { \TH@in {#1} } %: indent;
 \cs_new_protected:Npn \THinPlain #1 { \TH@in {#1} } %: indent;
+\cs_new:Npn \THcr #1 { \TH@cr {#1} } % char replacement;
+\cs_new:Npn \THcrPlain #1 { \char_generate:nn { #1 } { 12 } }
+\cs_new:Npn \TH@cr #1 
+  { \cs_if_exist_use:cF { l__texhigh_cr-#1_tl } { \char_generate:nn { #1 } { 12 } } }
 \cs_new_protected:Npn \THbp #1 { \use:c { TH@bp@\texhigh@fallback{bp}{#1} } } %: break point;
 \cs_new_protected:Npn \THbpPlain #1 { \TH@bp@PLAIN } %: break point;
 \cs_new_protected:Npn \THcs #1#2#3 %: control sequence;
@@ -32,8 +37,13 @@
 \cs_new_protected:Npn \THesPlain #1 { \TH@es@PLAIN }
 \cs_new_protected:Npn \THee #1 { \use:c { TH@ee@\texhigh@fallback{ee}{#1} } } %: escaped end;
 \cs_new_protected:Npn \THeePlain #1 { \TH@ee@PLAIN }
-\cs_new_protected:Npn \THpn #1#2 { \use:c { TH@pn@\texhigh@fallback{pn}{#1} } {#2} } %: punctuation;
-\cs_new_protected:Npn \THpnPlain #1#2 { \TH@pn@PLAIN {#2} } %: punctuation;
+\cs_new_protected:Npn \THpn #1#2 
+  {
+    \exp_args:Nee \use:c 
+      { TH@pn@\texhigh@fallback{pn}{#1} } { \texhigh@normalize@cs {#2} }
+  } %: punctuation;
+\cs_new_protected:Npn \THpnPlain #1#2 
+  { \exp_args:Ne \TH@pn@PLAIN { \texhigh@normalize@cs {#2} } } %: punctuation;
 \cs_new:Npn \texhigh@fallback #1#2
   {
     \cs_if_exist:cTF { TH@#1@#2 } {#2}
@@ -53,17 +63,45 @@
     \c_space_tl
     \exp_not:N \q_recursion_stop
   }
-\cs_new:Npn \__texhigh_normalize_cs:w #1 "#2~%
+\cs_if_exist:NTF \tex_Ucharcat:D
   {
-    #1
-    \quark_if_recursion_tail_stop:n {#2}
-    \char_generate:nn { "#2 } { 12 }
-    \__texhigh_normalize_cs:w
+    \cs_new:Npn \__texhigh_normalize_cs:w #1 "#2~%
+      {
+        #1
+        \quark_if_recursion_tail_stop:n {#2}
+        \tex_Ucharcat:D "#2 \exp_stop_f: 12 \exp_stop_f:
+        \__texhigh_normalize_cs:w
+      }
+  }
+  {
+    \cs_new:Npn \__texhigh_normalize_cs:w #1 "#2~%
+      {
+        #1
+        \quark_if_recursion_tail_stop:n {#2}
+        \char_generate:nn { "#2 } { 12 }
+        \__texhigh_normalize_cs:w
+      }
   }
 
 \cs_new_eq:NN \texhigh@replicate \prg_replicate:nn
 \cs_new_protected:Npn \texhigh@pdfliteral { \__kernel_backend_literal_pdf:e }
 \cs_new_eq:NN \TH@letcs \cs_set_eq:cc
+\newcommand\TH@c@lor[2][]
+  {
+    \tl_if_empty:nTF {#1} { \color_select:n {#2} }
+      { \color_select:nn {#1} {#2} }
+  }
+\AtBeginDocument{\@ifpackageloaded{xcolor}
+  {\cs_gset:Npn \TH@c@lor { \color } }{}}
+\cs_new_protected_nopar:Npn \THcolor { \TH@c@lor }
+\NewDocumentCommand \__texhigh_use_none_om:w { O{} m } {}
+\cs_new_protected:Npn \THcolorPlain { \__texhigh_use_none_om:w }
+\cs_new_protected:Npn \THColorStatus #1
+  {
+    \int_compare:nNnTF {#1} = { 0 }
+      { \cs_set_protected_nopar:Npn \THcolor { \__texhigh_use_none_om:w } }
+      { \cs_set_protected_nopar:Npn \THcolor { \TH@c@lor } }
+  }
 
 \NewDocumentCommand \texhighsetclassfallback { s m m m } % type, class, fallback
   {
@@ -91,34 +129,50 @@
     {\PackageWarning{texhigh}{Unknown texhigh style #1.}}
     {\def\texhigh@curr@style{#1}\@nameuse{texhigh@style/#1}}
 }
+
+\cs_new_protected:Npn \@texhigh@push #1#2 { }
+
 \cs_new_protected:Npn \THSetPlainStyle #1
   {
     \str_if_eq:eeTF { #1 } { * }
-      { \clist_map_inline:nn { bp,cs,ch,rs,re,st,es,ee,pn } }
+      { \clist_map_inline:nn { bp,cs,ch,rs,re,st,es,ee,pn,color } }
       { \clist_map_inline:nn {#1} }
         { \cs_set_eq:cc { TH ##1 } { TH ##1 Plain } }
   }
 
+\NewDocumentCommand \THSetCharReplacement { s m +m }
+  {
+    \bool_if:nTF {#1}
+      { \tl_set:cn { l__texhigh_cr- \int_eval:n { `#2 } _tl } {#3} }
+      {
+        \tl_set:cx { l__texhigh_cr- \int_eval:n { `#2 } _tl }
+          {
+            \exp_not:N \tex_ifincsname:D \char_generate:nn { `#2 } { 12 }
+            \exp_not:N \else: \exp_not:N \exp_not:n { \exp_not:n { #3 } }
+            \exp_not:N \fi:
+          }
+      }
+  }
 \ExplSyntaxOff
 
-\newcommand\THSetClassBP[3][\@currname]{\@namedef{TH@bp#1@#2}{#3}}
-\newcommand\THLetClassBP[3][\@currname]{\TH@letcs{TH@bp#1@#2}{TH@bp#1@#3}}
-\newcommand\THSetClassCS[3][\@currname]{\@namedef{TH@cs#1@#2}##1##2{#3}}
-\newcommand\THLetClassCS[3][\@currname]{\TH@letcs{TH@cs#1@#2}{TH@cs#1@#3}}
-\newcommand\THSetClassCH[3][\@currname]{\@namedef{TH@ch#1@#2}##1{#3}}
-\newcommand\THLetClassCH[3][\@currname]{\TH@letcs{TH@ch#1@#2}{TH@ch#1@#3}}
-\newcommand\THSetClassRS[3][\@currname]{\@namedef{TH@rs#1@#2}{#3}}
-\newcommand\THLetClassRS[3][\@currname]{\TH@letcs{TH@rs#1@#2}{TH@rs#1@#3}}
-\newcommand\THSetClassRE[3][\@currname]{\@namedef{TH@re#1@#2}{#3}}
-\newcommand\THLetClassRE[3][\@currname]{\TH@letcs{TH@re#1@#2}{TH@re#1@#3}}
-\newcommand\THSetClassST[3][\@currname]{\@namedef{TH@st#1@#2}{#3}}
-\newcommand\THLetClassST[3][\@currname]{\TH@letcs{TH@st#1@#2}{TH@st#1@#3}}
-\newcommand\THSetClassES[3][\@currname]{\@namedef{TH@es#1@#2}{#3}}
-\newcommand\THLetClassES[3][\@currname]{\TH@letcs{TH@es#1@#2}{TH@es#1@#3}}
-\newcommand\THSetClassEE[3][\@currname]{\@namedef{TH@ee#1@#2}{#3}}
-\newcommand\THLetClassEE[3][\@currname]{\TH@letcs{TH@ee#1@#2}{TH@ee#1@#3}}
-\newcommand\THSetClassPN[3][\@currname]{\@namedef{TH@pn#1@#2}##1{#3}}
-\newcommand\THLetClassPN[3][\@currname]{\TH@letcs{TH@pn#1@#2}{TH@pn#1@#3}}
+\newcommand\THSetClassBP[3][\@currname]{\@texhigh@push{bp#1}{#2}\@namedef{TH@bp#1@#2}{#3}}
+\newcommand\THLetClassBP[3][\@currname]{\@texhigh@push{bp#1}{#2}\TH@letcs{TH@bp#1@#2}{TH@bp#1@#3}}
+\newcommand\THSetClassCS[3][\@currname]{\@texhigh@push{cs#1}{#2}\@namedef{TH@cs#1@#2}##1##2{#3}}
+\newcommand\THLetClassCS[3][\@currname]{\@texhigh@push{cs#1}{#2}\TH@letcs{TH@cs#1@#2}{TH@cs#1@#3}}
+\newcommand\THSetClassCH[3][\@currname]{\@texhigh@push{ch#1}{#2}\@namedef{TH@ch#1@#2}##1{#3}}
+\newcommand\THLetClassCH[3][\@currname]{\@texhigh@push{ch#1}{#2}\TH@letcs{TH@ch#1@#2}{TH@ch#1@#3}}
+\newcommand\THSetClassRS[3][\@currname]{\@texhigh@push{rs#1}{#2}\@namedef{TH@rs#1@#2}{#3}}
+\newcommand\THLetClassRS[3][\@currname]{\@texhigh@push{rs#1}{#2}\TH@letcs{TH@rs#1@#2}{TH@rs#1@#3}}
+\newcommand\THSetClassRE[3][\@currname]{\@texhigh@push{re#1}{#2}\@namedef{TH@re#1@#2}{#3}}
+\newcommand\THLetClassRE[3][\@currname]{\@texhigh@push{re#1}{#2}\TH@letcs{TH@re#1@#2}{TH@re#1@#3}}
+\newcommand\THSetClassST[3][\@currname]{\@texhigh@push{st#1}{#2}\@namedef{TH@st#1@#2}{#3}}
+\newcommand\THLetClassST[3][\@currname]{\@texhigh@push{st#1}{#2}\TH@letcs{TH@st#1@#2}{TH@st#1@#3}}
+\newcommand\THSetClassES[3][\@currname]{\@texhigh@push{es#1}{#2}\@namedef{TH@es#1@#2}{#3}}
+\newcommand\THLetClassES[3][\@currname]{\@texhigh@push{es#1}{#2}\TH@letcs{TH@es#1@#2}{TH@es#1@#3}}
+\newcommand\THSetClassEE[3][\@currname]{\@texhigh@push{ee#1}{#2}\@namedef{TH@ee#1@#2}{#3}}
+\newcommand\THLetClassEE[3][\@currname]{\@texhigh@push{ee#1}{#2}\TH@letcs{TH@ee#1@#2}{TH@ee#1@#3}}
+\newcommand\THSetClassPN[3][\@currname]{\@texhigh@push{pn#1}{#2}\@namedef{TH@pn#1@#2}##1{#3}}
+\newcommand\THLetClassPN[3][\@currname]{\@texhigh@push{pn#1}{#2}\TH@letcs{TH@pn#1@#2}{TH@pn#1@#3}}
 
 \long\def\TH@nl{\leavevmode\par}
 \long\@namedef{TH@in}#1{\texhigh@replicate{#1}{ }}
@@ -138,11 +192,102 @@
 \long\def\TH@es@PLAIN{\begingroup}
 \long\@namedef{TH@ee@?}{\endgroup}
 \long\def\TH@ee@PLAIN{\endgroup}
-\long\@namedef{TH@pn@?}#1{\expandafter\@gobble\string#1}
-\long\def\TH@pn@PLAIN#1{\expandafter\@gobble\string#1}
+\long\@namedef{TH@pn@?}#1{#1}
+\long\def\TH@pn@PLAIN#1{#1}
+
+\ifdefined\directlua
+  \directlua{% https://tex.stackexchange.com/a/211619/232375
+    function LuaTeXglyph()
+      local charNo=token.scan_int()
+      local fontNo=font.current()
+      local f=font.getfont(fontNo)
+      local i
+      local v
+      local found=false
+      for i,v in pairs(f.characters) do
+      if v.index == charNo
+      then
+          tex.print( '\\char '..i..' ' )
+          found=true
+          break
+        end
+      end
+      if not found
+      then
+        tex.error( 'font has no glyph '..charNo )
+      end
+    end
+  }
+  \protected\def\XeTeXglyph{\directlua{LuaTeXglyph()}}
+\fi
 
 \RequirePackage{verbatim}
 \ExplSyntaxOn
+
+\cs_new:Npn \__texhigh_if_head_digit:nTF #1
+  {
+    \if_case:w 0 \if_case:w 1#1 \or:\or:\or:\or:\or:\or:\or:\or:\or:\else: 1\fi: \exp_stop_f:
+      \exp_after:wN \use_ii:nn
+    \else:
+      \exp_after:wN \use_i:nn
+    \fi:
+  }
+
+\cs_new:Npn \texhigh_base_encode:n #1
+  {
+    \exp_args:Ne \texhigh_base_encode_ascii:n
+      { \str_map_function:nN {#1} \__texhigh_base_char_to_ascii:N }
+  }
+\cs_generate_variant:Nn \texhigh_base_encode:n { e }
+\cs_new:Npn \__texhigh_base_char_to_ascii:N #1 { \__str_encode_utf_viii_char:n { `#1 } }
+% base64 encoding and decoding.
+% from: https://tex.stackexchange.com/a/605409/232375
+\cs_new:Npn \texhigh_base_encode_ascii:n #1
+  {
+    \exp_args:Ne \__texhigh_base_encode_bin:n
+      { \str_map_function:nN {#1} \__texhigh_base_char_to_bin:n }
+  }
+\cs_generate_variant:Nn \texhigh_base_encode_ascii:n { e }
+\cs_new:Npn \__texhigh_base_char_to_bin:n #1
+  { \exp_args:Nf \__texhigh_base_char_to_bin_pad:nn { \int_to_bin:n { `#1 } } { 8 } }
+\cs_new:Npn \__texhigh_base_char_to_bin_pad:nn #1 #2
+  { \prg_replicate:nn { #2 - \str_count:n {#1} } { 0 } #1 }
+\cs_new:Npn \__texhigh_base_encode_bin:n #1
+  { \__texhigh_base_encode_bin:w #1 222222 \q_stop }
+\cs_new:Npn \__texhigh_base_encode_bin:w #1#2#3#4#5#6
+  { \__texhigh_base_encode_bin_aux:w #1#2#3#4#5#6 2 \q_nil }
+\cs_new:Npn \__texhigh_base_encode_bin_aux:w #1 2 #2 \q_nil
+  {
+    \tl_if_empty:nTF {#2}
+      { \exp_args:Nf \__texhigh_base_encode_lookup:n { \int_from_bin:n {#1} } }
+      {
+        \tl_if_empty:nT {#1} { \use_none_delimit_by_q_stop:w }
+        \exp_args:Nf \__texhigh_base_encode_lookup:n
+          {
+            \exp_args:Ne \int_from_bin:n
+              { #1 \prg_replicate:nn { \str_count:n {#2} } { 0 } }
+          }
+        \int_compare:nNnTF { \str_count:n {#2} } = { 2 } { = } { == }
+        \use_none_delimit_by_q_stop:w
+      }
+    \__texhigh_base_encode_bin:w
+  }
+\cs_new:Npn \__texhigh_base_encode_lookup:n #1
+  {
+    \if_int_compare:w #1 < 26 ~
+      \char_generate:nn { #1 + `A } { 12 }
+    \else:
+      \if_int_compare:w #1 < 52 ~
+        \char_generate:nn { #1 + `a - 26 } { 12 }
+      \else:
+        \if_int_compare:w #1 < 62 ~
+          \char_generate:nn { #1 + `0 - 52 } { 12 }
+        \else:
+          \if_int_compare:w #1 = 62 ~ + \else: / \fi:
+        \fi:
+      \fi:
+    \fi:
+  }
 
 \iow_new:N \g__texhigh_verb_iow
 \cs_new_protected:Npn \__texhigh_verb_text:nn #1#2
@@ -169,44 +314,242 @@
 
 \cs_new_protected:Npn \texhighdefstyle #1#2
   { \keys_define:nn { texhigh } { #1 .meta:nn = { texhigh } {#2} } }
-\keys_define:nn { texhigh }
+\keys_define:nn { texhigh } 
   {
+    cache-dir  .tl_set:N = \l__texhigh_cache_dir_tl,
+    cache-dir .initial:n = ./ ,
+  }
+\tl_new:N \l__texhigh_char_replacements_tl
+\seq_new:N \l__texhigh_lexers_seq
+\keys_define:nn { texhigh/high }
+  {
+    enhanced .bool_set:N = \l__texhigh_enhanced_bool ,
     filename .tl_set:N = \l__texhigh_fn_tl ,
-    filename .initial:n = \jobname.texhigh.verb ,
+    filename .initial:n = { \l__texhigh_cache_dir_tl \jobname.texhigh.verb } ,
     filename .groups:n = command ,
     banner .bool_set:N = \l__texhigh_banner_bool ,
     banner .groups:n = command ,
-    use-ctab .clist_set:N = \l__texhigh_current_ctab_clist ,
+    use-ctab .tl_set:N = \l__texhigh_current_ctab_tl ,
     use-ctab .groups:n = command ,
     ctab-file .clist_set:N = \l__texhigh_ctab_file_clist ,
     ctab-file .groups:n = command ,
     __config .clist_set:N = \l__texhigh_config_clist ,
+    __config_base .clist_set:N = \l__texhigh_config_base_clist ,
     config-file .clist_set:N = \l__texhigh_config_file_clist ,
     config-file .groups:n = command ,
+    config-file+ .code:n = \clist_put_right:Nn \l__texhigh_config_file_clist {#1} ,
+    config-file+ .groups:n = command ,
+    gobble     .code:n = \__texhigh_set_short_int:nn { gobble } {#1} ,
+    gobble   .groups:n = command ,
+    tabs-len   .code:n = \__texhigh_set_short_int:nn { tabs_len } {#1} ,
+    tabs-len .groups:n = command ,
+    lines      .code:n = \__texhigh_set_lines:n {#1} ,
+    lines    .groups:n = command ,
+    char-replacements  .code:n = 
+      \tl_clear:N \l__texhigh_char_replacements_tl
+      \__texhigh_add_char_replacements:n {#1} ,
+    char-replacements+ .code:n = \__texhigh_add_char_replacements:n {#1} ,
     output .tl_set:N = \l__texhigh_output_tl ,
     output .groups:n = command ,
+    no-configs .code:n =
+      {
+        \clist_clear:N \l__texhigh_config_clist
+        \clist_clear:N \l__texhigh_config_base_clist
+        \tl_clear:N \l__texhigh_char_replacements_tl
+        \seq_clear:N \l__texhigh_lexers_seq
+      } ,
+    no-ctabs .code:n =
+      {
+        \tl_clear:N \l__texhigh_current_ctab_tl
+        \clist_clear:N \l__texhigh_ctab_file_clist
+      } ,
+    cache-dir .tl_set:N = \l__texhigh_cache_dir_tl ,
 
     font .tl_set:N = \l__texhigh_font_tl ,
     font .initial:n = \ttfamily ,
+    font+ .code:n = \tl_put_right:Nn \l__texhigh_font_tl {#1} ,
     style .code:n = \clist_map_inline:nn {#1} { \THUseSavedStyle {##1} } ,
     style .groups:n = format ,
-    this-cs .code:n = {
+    this-cs .code:n =
+      {
         \clist_put_right:Nn \l__texhigh_config_clist { { cs_categories.this ~ '.+' } }
         \THSetClassCS[]{this}{#1{{##1}{##2}}} % #1=tokens, ##1=escape char, ##2=cs name
-    },
+      } ,
     this-cs .groups:n = format ,
+    char-category   .code:n = \__texhigh_add_char_category:nnn #1 ,
+    char-category .groups:n = format ,
+    cs-category     .code:n = \__texhigh_add_cs_category:nnn #1 ,
+    cs-category   .groups:n = format ,
+    lexer           .code:n = \__texhigh_add_lexer:nnnn #1 ,
+    lexer-catcode*  .code:n = \__texhigh_add_lexer_catcode:nnn #1 ,
+    extra-catcode*  .code:n = \__texhigh_add_lexer_catcode:nnn { 0 } { } {#1} ,
+    lexer-catcode .multichoice: ,
+    lexer-catcode/atletter .code:n = \__texhigh_add_lexer_catcode:nnn
+      {(?:^|\cJ.|\n)\s*\c{makeatletter}$}{(?:^|\cJ.|\n)\s*\c{makeatother}$}{atletter} ,
+    lexer-catcode/explon .code:n = \__texhigh_add_lexer_catcode:nnn
+      {(?:^|\cJ.|\n)\s*\c{ExplSyntaxOn}$}{(?:^|\cJ.|\n)\s*\c{ExplSyntaxOff}$}{explon} ,
+    no-lexer     .code:n = \seq_clear:N \l__texhigh_lexers_seq ,
+  }
+\cs_new_protected:Npn \__texhigh_set_short_int:nn #1#2
+  {
+    \str_if_eq:nnTF {#2} { auto }
+      { \int_set:Nn \l__texhigh_tmp_int { -1 } }
+      { \int_set:Nn \l__texhigh_tmp_int { #2 } }
+    \clist_put_right:Ne \l__texhigh_config_base_clist
+      { 
+        {
+          #1 \c_space_tl
+          ' 
+            \texhigh_base_encode:e 
+              {
+                \int_compare:nNnTF \l__texhigh_tmp_int < { 0 }
+                  { 'auto' } { \int_use:N \l__texhigh_tmp_int }
+              }
+          '
+        }
+      }
+  }
+\cs_new_protected:Npn \__texhigh_set_lines:n #1
+  {
+    \tl_set:Nx \l__texhigh_tmpa_tl { \clist_item:nn {#1} { 1 } }
+    \tl_set:Nx \l__texhigh_tmpb_tl { \clist_item:nn {#1} { 2 } }
+    \tl_if_empty:NT \l__texhigh_tmpb_tl
+      { \tl_set_eq:NN \l__texhigh_tmpb_tl \l__texhigh_tmpa_tl }
+    \clist_put_right:Ne \l__texhigh_config_base_clist
+      {
+        {
+          lines \c_space_tl
+          ' 
+          \texhigh_base_encode:e
+            { [ \int_eval:n \l__texhigh_tmpa_tl , \int_eval:n \l__texhigh_tmpb_tl ] }
+          '
+        }
+      }
+  }
+\cs_new_protected:Npn \__texhigh_add_char_replacements:n
+  {
+    \keyval_parse:NNn
+    \__texhigh_add_char_replacements_aux:n
+    \__texhigh_add_char_replacements_aux:nn
+  }
+\cs_new_protected:Npn \__texhigh_add_char_replacements_aux:n #1
+  {
+    \tl_map_inline:nn {#1}
+      {
+        \tl_put_right:Ne \l__texhigh_char_replacements_tl
+          { \token_if_cs:NTF ##1 \cs_to_str:N \token_to_str:N ##1 }
+      }
+  }
+\cs_new:Npn \__texhigh_add_char_replacements_aux:nn #1#2
+  {
+    \tl_put_right:Ne \l__texhigh_char_replacements_tl
+      { \token_if_cs:NTF {#1} \cs_to_str:N \token_to_str:N #1 }
+    \THSetCharReplacement {#1} {#2}
+  }
+\tl_new:N \l__texhigh_normalize_tl
+\cs_new_protected:Npn \__texhigh_normalize_string:Nn #1#2
+  {
+    \tl_clear:N \l__texhigh_normalize_tl
+    \tl_analysis_map_inline:nn {#2}
+      {
+        \tl_put_right:Ne \l__texhigh_normalize_tl
+          {
+            \bool_lazy_or:nnT 
+              { ! \int_compare_p:nNn { "##3 } = { 10 } } % catcode != space
+              { \int_compare_p:nNn {##2} = { -1 } }      % cs
+              { \exp_after:wN \token_to_str:N ##1 }
+          }
+      }
+    \tl_set_eq:NN #1 \l__texhigh_normalize_tl
+  }
+\cs_new_protected:Npn \__texhigh_add_char_category:nnn #1#2#3
+  {
+    \str_set:Nn \l__texhigh_tmp_str {#1}
+    \__texhigh_normalize_string:Nn \l__texhigh_tmp_tl {#2}
+    \clist_put_right:Ne \l__texhigh_config_clist
+      { { char_categories.'\l__texhigh_tmp_str' \c_space_tl '\l__texhigh_tmp_tl' } }
+    \THSetClassCH[]{ \l__texhigh_tmp_str }{#3}
+  }
+\cs_new_protected:Npn \__texhigh_add_cs_category:nnn #1#2#3
+  {
+    \str_set:Nn \l__texhigh_tmp_str {#1}
+    \__texhigh_normalize_string:Nn \l__texhigh_tmp_tl {#2}
+    \clist_put_right:Ne \l__texhigh_config_clist
+      { { cs_categories.'\l__texhigh_tmp_str' \c_space_tl '\l__texhigh_tmp_tl' } }
+    \THSetClassCS[]{ \l__texhigh_tmp_str }{#3}
+  }
+\tl_new:N \l__texhigh_lexer_a_tl
+\tl_new:N \l__texhigh_lexer_b_tl
+\cs_new_protected:Npn \__texhigh_add_lexer_catcode:nnn #1#2
+  { \__texhigh_add_lexer:nnnn {#1} {#2} { CatCode } }
+\cs_new_protected:Npn \__texhigh_add_lexer:nnnn #1#2#3#4
+  {
+    \__texhigh_normalize_string:Nn \l__texhigh_lexer_a_tl {#1}
+    \__texhigh_normalize_string:Nn \l__texhigh_lexer_b_tl {#2}
+    \__texhigh_add_lexer_chk:N \l__texhigh_lexer_a_tl
+    \__texhigh_add_lexer_chk:N \l__texhigh_lexer_b_tl
+    \tl_if_in:nnTF {#4} { = } { \use_i:nn }
+      { \tl_if_in:nnTF {#4} { , } { \use_i:nn } { \use_ii:nn } }
+        {
+          \seq_put_right:Ne \l__texhigh_lexers_seq
+            {
+              [ \l__texhigh_lexer_a_tl , \l__texhigh_lexer_b_tl ,
+                { action = '#3', value = [ \__texhigh_add_lexer_vec:n {#4} ] } ] 
+            }
+        }
+        {
+          \str_if_eq:eeTF {#3} { EndLine }
+            {
+              \seq_put_right:Ne \l__texhigh_lexers_seq
+                { [ \l__texhigh_lexer_a_tl , \l__texhigh_lexer_b_tl , { action = '#3', value = #4 } ] }
+            }
+            {
+              \seq_put_right:Ne \l__texhigh_lexers_seq
+                { [ \l__texhigh_lexer_a_tl , \l__texhigh_lexer_b_tl , { action = '#3', value = '#4' } ] }
+            }
+        }
+  }
+\cs_new_protected:Npn \__texhigh_add_lexer_chk:N #1
+  {
+    \tl_if_empty:NTF #1 { \tl_set:Nx #1 { '#1' } }
+      {
+        \__texhigh_if_head_digit:nTF {#1} { }
+          {
+            \tl_if_head_eq_charcode:VNF #1 [ % ]
+              { \tl_set:Nx #1 { ' #1 \str_if_eq:eeF {#1} { \c_backslash_str L } \c_dollar_str ' } }
+          }
+      }
+  }
+\cs_new:Npn \__texhigh_add_lexer_vec:n #1
+  {
+    \use:e 
+      { \keyval_parse:NNn \__texhigh_add_lexer_vec_aux:n \__texhigh_add_lexer_vec_aux:nn {#1} }
+  }
+\cs_new:Npn \__texhigh_add_lexer_vec_aux:n #1
+  { \tl_map_tokens:nn {#1} { \__texhigh_add_lexer_vec_aux:nN { 11 } } }
+\cs_new:Npn \__texhigh_add_lexer_vec_aux:nn #1#2
+  { \tl_map_tokens:nn {#1} { \__texhigh_add_lexer_vec_aux:nN {#2} } }
+\cs_new:Npn \__texhigh_add_lexer_vec_aux:nN #1#2
+  {
+    [ '
+      \tl_if_single_token:nTF {#2}
+        { \token_if_cs:NTF #2 { \cs_to_str:N #2 } { #2 } }
+        { \char_generate:nn {#2} { 12 } }
+      ' , #1 ] ,
   }
 \cs_new_protected:Npn \__texhigh_options:
   {
-    \l__texhigh_font_tl
+    \l__texhigh_font_tl \raggedright
   }
 \NewDocumentCommand\texhighverb{ s +O{} +v }
   {
     \group_begin:
-    \keys_set:nn { texhigh } {#2}
+    \tl_set:Nn \l__texhigh_command_tl { high }
+    \int_set:Nn { \endlinechar } { -1 }
+    \keys_set:nn { texhigh/high } {#2}
     \__texhigh_options:
     \__texhigh_get_text:n {#3}
-    \group_end: \ignorespaces
+    \group_end:
   }
 \NewDocumentCommand\texhighfile{ +O{} m }
   {
@@ -214,7 +557,8 @@
     \group_begin:
     \__texhigh_env_init:
     \tl_clear:N \l__texhigh_output_tl
-    \keys_set:nn { texhigh } {#1}
+    \tl_set:Nn \l__texhigh_command_tl { high }
+    \keys_set:nn { texhigh/high } {#1}
     \__texhigh_options:
     \tl_set:Nn \l__texhigh_fn_tl {#2}
     \__texhigh_get_last: 
@@ -226,7 +570,8 @@
     \par 
     \group_begin:
     \__texhigh_env_init:
-    \keys_set:nn { texhigh } {#1}
+    \tl_set:Nn \l__texhigh_command_tl { high }
+    \keys_set:nn { texhigh/high } {#1}
     \__texhigh_options:
     \file_input:n {#2}
     \par
@@ -235,7 +580,8 @@
 \NewDocumentEnvironment{texhigh}{+O{}}
   { 
     \par \__texhigh_env_init: 
-    \keys_set:nn { texhigh } {#1} 
+    \tl_set:Nn \l__texhigh_command_tl { high }
+    \keys_set:nn { texhigh/high } {#1} 
     \group_begin: \__texhigh_verb_start:n \l__texhigh_fn_tl 
   }
   { 
@@ -252,10 +598,11 @@
 \cs_new_protected:Npn \__texhigh_get_text:n #1
   {
     \str_if_in:nnTF {#1} { " }
-      {
-        \__texhigh_verb_text:nn \l__texhigh_fn_tl {#1}
-        \tex_input:D | " \__texhigh_args_with_file:n \l__texhigh_fn_tl "
-      }
+      % {
+      %   \__texhigh_verb_text:nn \l__texhigh_fn_tl {#1}
+      %   \tex_input:D | " \__texhigh_args_with_file:n \l__texhigh_fn_tl "
+      % }
+      { \tex_input:D | " \__texhigh_args_with_text_base:n {#1} " }
       { \tex_input:D | " \__texhigh_args_with_text:n {#1} " }
   }
 \cs_new_protected:Npn \__texhigh_get_last:
@@ -265,15 +612,22 @@
         \tex_input:D | " \__texhigh_args_with_file:n \l__texhigh_fn_tl "
       }
       {
+        \tl_put_left:NV \l__texhigh_output_tl \l__texhigh_cache_dir_tl
         \sys_shell_now:e { \__texhigh_args_with_file:n \l__texhigh_fn_tl }
         \file_input:V \l__texhigh_output_tl
       }
   }
 \cs_new:Npn \__texhigh_args_with_text:n #1
   {
-    texhigh \c_space_tl 
+    texhigh \c_space_tl
     \__texhigh_args:
     --text \c_space_tl '#1'
+  }
+\cs_new:Npn \__texhigh_args_with_text_base:n #1
+  {
+    texhigh \c_space_tl
+    \__texhigh_args:
+    --text-base64 \c_space_tl ' \texhigh_base_encode:n {#1} '
   }
 \cs_new:Npn \__texhigh_args_with_file:n #1
   {
@@ -284,32 +638,165 @@
 \cs_new:Npn \__texhigh_args:
   {
     \bool_if:NF \l__texhigh_banner_bool { --no-banner \c_space_tl }
-    \clist_if_empty:NF \l__texhigh_current_ctab_clist 
+    \l__texhigh_command_tl \c_space_tl
+    \bool_if:NT \l__texhigh_enhanced_bool
+      { --enhanced \c_space_tl }
+    \tl_if_empty:NF \l__texhigh_current_ctab_tl 
       { 
         --current-ctab \c_space_tl 
-        \clist_use:Nn \l__texhigh_current_ctab_clist { --current-ctab ~ }
-        \c_space_tl 
+        \l__texhigh_current_ctab_tl \c_space_tl 
       }
     \clist_if_empty:NF \l__texhigh_ctab_file_clist
       { 
         --ctab-file \c_space_tl 
-        \clist_use::Nn \l__texhigh_ctab_file_clist { --ctab-file ~ }
+        \clist_use::Nn \l__texhigh_ctab_file_clist { ~ --ctab-file ~ }
         \c_space_tl 
       }
     \clist_if_empty:NF \l__texhigh_config_file_clist
       { 
         --config-file \c_space_tl 
-        \clist_use:Nn \l__texhigh_config_file_clist { --config-file ~ }
+        \clist_use:Nn \l__texhigh_config_file_clist { ~ --config-file ~ }
         \c_space_tl 
       }
     \clist_if_empty:NF \l__texhigh_config_clist
       {
         --config \c_space_tl
-        \clist_use:Nn \l__texhigh_config_clist { --config ~ }
+        \clist_use:Nn \l__texhigh_config_clist { ~ --config ~ }
+        \c_space_tl
+      }
+    \clist_if_empty:NF \l__texhigh_config_base_clist
+      {
+        --config-base64 \c_space_tl
+        \clist_use:Nn \l__texhigh_config_base_clist { ~ --config-base64 ~ }
+        \c_space_tl
+      }
+    \seq_if_empty:NF \l__texhigh_lexers_seq
+      {
+        --config-base64 \c_space_tl
+        lexer \c_space_tl
+        \texhigh_base_encode:e { [ \seq_use:Nn \l__texhigh_lexers_seq { , } ] }
+        \c_space_tl
+      }
+    \tl_if_empty:NF \l__texhigh_char_replacements_tl
+      {
+        --config-base64 \c_space_tl
+        char_replacements \c_space_tl
+        \texhigh_base_encode:e { ' \l__texhigh_char_replacements_tl ' }
         \c_space_tl
       }
     \tl_if_empty:NF \l__texhigh_output_tl
       { --output \c_space_tl \l__texhigh_output_tl \c_space_tl }
+  }
+
+% use it locally!
+\cs_new_protected:Npn \__texhigh_no_cjk_specials: { }
+\AtBeginDocument {
+  \cs_if_exist:NT \XeTeXinterchartokenstate 
+    { \cs_gset_protected:Npn \__texhigh_no_cjk_specials: { \XeTeXinterchartokenstate\z@ } }
+  \cs_if_exist:NT \ltjsetparameter
+    {
+      \cs_gset_protected:Npn \__texhigh_no_cjk_specials: 
+        { \ltjsetparameter{jacharrange={-1,-2,-3,-4,-5,-6,-7,-8,-9}} }
+    }
+  \cs_if_exist:NF \fontspec
+    {
+      \PackageError{texhigh}{fontspec~package~is~required.}
+      \cs_gset_protected:Npn \TeXHighFont #1 { \normalfont }
+    }
+}
+\cs_new_protected:Npn \TeXHighFontList #1
+  {
+    \seq_set_from_clist:Nn \l__texhigh_font_seq {#1}
+  }
+\cs_new_protected:Npn \TeXHighFont #1
+  {
+    \tl_set:Nx \l__texhigh_tmp_tl { \seq_item:Nn \l__texhigh_font_seq {#1} }
+    \tl_if_empty:NTF \l__texhigh_tmp_tl
+      { \normalfont }
+      { \exp_args:No \fontspec { \l__texhigh_tmp_tl } [ ] }
+  }
+\cs_new_protected:Npn \TeXHighSize #1#2 { }
+\cs_new_protected:Npn \TeXHighGlyphEntry #1#2#3#4#5#6#7#8#9 { }
+\cs_new_protected:Npn \TeXHighGlyph { \XeTeXglyph }
+\cs_new_protected:Npn \TeXHighNewline { \par }
+\keys_define:nn { texhigh/layout }
+  {
+    fonts .clist_set:N   = \l__texhigh_fonts_clist ,
+    fonts+       .code:n = \clist_put_right:Nn \l__texhigh_fonts_clist {#1} ,
+    fontsize .dim_set:N  = \l__texhigh_fontsize_dim ,
+    fontsize*    .code:n = 
+      {
+        \group_begin:
+        #1
+        \use:e 
+          {
+            \group_end:
+            \dim_set:Nn \l__texhigh_fontsize_dim
+              { \dim_eval:n { \f@size \p@ } }
+          }
+      } ,
+    lineheight .dim_set:N = \l__texhigh_lineheight_dim ,
+    force     .bool_set:N = \l__texhigh_force_run_bool ,
+    force      .initial:n = true ,
+    cache-dir   .tl_set:N = \l__texhigh_cache_dir_tl ,
+  }
+\cs_new:Npn \__texhigh_layout_args:n #1
+  {
+    \dim_compare:nNnT \l__texhigh_fontsize_dim > { 0pt }
+      {
+        --fontsize \c_space_tl
+        \dim_to_decimal_in_bp:n { \l__texhigh_fontsize_dim } \c_space_tl
+      }
+    \dim_compare:nNnT \l__texhigh_lineheight_dim > { 0pt }
+      {
+        --lineheight \c_space_tl
+        \dim_to_decimal_in_bp:n { \l__texhigh_lineheight_dim } \c_space_tl
+      }
+    \clist_if_empty:NF \l__texhigh_fonts_clist
+      {
+        --fonts \c_space_tl
+        '\l__texhigh_fonts_clist' \c_space_tl
+      }
+    --base64 \c_space_tl ' \texhigh_base_encode:e {#1} '
+  }
+\NewDocumentCommand \kaomoji { s ={fonts+} O{} m } 
+  {
+    \group_begin:
+    \__texhigh_no_cjk_specials:
+    \dim_set:Nn \l__texhigh_fontsize_dim { \f@size pt }
+    \keys_set:nn { texhigh/layout } {#2}
+    \bool_if:nTF {#1}
+      {
+        \str_set:Ne \l__texhigh_tmp_str
+          { \l__texhigh_cache_dir_tl \str_mdfive_hash:e {#3} }
+        \bool_lazy_or:nnT
+          { \l__texhigh_force_run_bool }
+          { ! \file_if_exist_p:V \l__texhigh_tmp_str }
+          {
+            \sys_shell_now:e
+              { 
+                texhigh~ --nb~ layout~ \__texhigh_layout_args:n {#3}
+                \c_space_tl -o~ \l__texhigh_tmp_str .png
+              }
+          }
+        \exp_args:Ne \use_ii_i:nn { { \l__texhigh_tmp_str .png } \group_end: }
+      }
+      {
+        \exp_args:Ne \sys_get_shell:nnNTF 
+          { texhigh~ --nb~ layout~ \__texhigh_layout_args:n {#3} }
+          { 
+            \int_set:Nn \endlinechar { -1 } 
+            \char_set_catcode_other:N \# 
+            \char_set_catcode_other:N \%
+            \char_set_catcode_other:N \^
+            \char_set_catcode_other:N \_
+            \char_set_catcode_other:N \&
+          }
+          \l__texhigh_kaomoji_tl
+          { \l__texhigh_kaomoji_tl }
+          { <ERROR> }
+          \group_end:
+      }
   }
 
 \DeclareKeys[texhigh/options/prelude]{
@@ -319,6 +806,12 @@
 
 \keys_define:nn { texhigh/options }
   {
+    enhanced .choice: ,
+    enhanced / true .meta:nn = { texhigh/high } { enhanced = true } ,
+    enhanced / false .meta:nn = { texhigh/high } { enhanced = false } ,
+    enhanced .initial:n = true ,
+    enhanced .default:n = true ,
+    cache-dir .meta:nn = { texhigh/high } { cache-dir = {#1} } ,
     color .meta:n = { prelude/color } ,
     tikz .meta:n = { prelude/tikz } ,
   }
