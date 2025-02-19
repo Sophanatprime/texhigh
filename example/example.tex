@@ -1,18 +1,29 @@
 % !TEX program=xelatex
 % !TEX options=-synctex=1 -shell-escape -interaction=nonstopmode -file-line-error "%DOC%"
-\documentclass[zihao=-4]{ctexart}
+\documentclass[zihao=-4,fontset=fandol]{ctexart}
 \usepackage[hmargin=2cm,vmargin=2.4cm]{geometry}
 \usepackage[many]{tcolorbox}
 \usepackage[color,tikz]{texhigh}
-\SetKeys[texhigh]{
-  font=\ttfamily\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}
-}
-\tcbset{listing engine=texhigh}
+\ifdefined\xeCJKsetup
+  \SetKeys[texhigh/high]{
+    font=\ttfamily\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}
+  }
+\else
+  \SetKeys[texhigh/high]{
+    font=\ttfamily
+  }
+\fi
+\newfontfamily\emojifont{Noto Emoji}
+% 若系统没有这些字体会自动忽略
+\SetKeys[texhigh/layout]{fonts={Segoe UI,Segoe UI Symbol,Arial,Microsoft YaHei UI,PingFang SC,FandolHei}}
+\SetKeys[texhigh/high]{cache-dir=texhigh-cache/} % cache-dir 不要忘记加 /
+\tcbset{listing engine=texhigh, listing file=texhigh-cache/\jobname.listing}
 \newcounter{example}
 \newtcblisting[use counter=example, number format=\arabic]
   {examcode}[2][]{listing and text, 
   title=代码 \thetcbcounter, enhanced,
   comment={#2},
+  left=2mm, right=2mm, top=2mm, bottom=2mm,
   sharp corners=downhill, arc=12pt, %skin=bicolor,
   fontupper=\linespread{1}\selectfont, left=6pt,
   colback=blue!1!white, colframe=blue!75!black,colbacklower=white,
@@ -36,16 +47,56 @@
 
 \textsf{texhigh} 宏包是专用来高亮 \TeX 文件的宏包。基于由 Rust 编写的命令行工具
 texhigh\footnote{https://github.com/Sophanatprime/texhigh-rs}，
-处理 1.2M 左右（37000 余行）的 \texttt{expl3-code.tex} 只需不到 0.4s，
-处理速度是 \textsf{minted} 宏包使用的 pygmentize 的 6 倍左右。
+处理 1.24MB 左右（37,700 余行）的 \texttt{expl3-code.tex} 只需 0.16s 左右
+（操作系统为 Windows，CPU 为 i7-12700H），
+处理速度约为 \textsf{minted} 宏包使用的 pygmentize 的 17 倍，
+texhigh 的增强模式也比它快 10 到 15 倍。
 对于普通大小的 \TeX 代码，处理它们所需的时间相比于 \TeX 文件本身编译所需的时间，
 已经可以忽略不记。
 
 \textsf{texhigh} 主要是在 \LaTeX 中为 texhigh 命令行工具提供交互接口。这要求在编译 \TeX
 文件时启用 \texttt{--shell-escape}。
 
-\textsf{texhigh} 提供 
-\texhighverb|\texhighverb、\texhighfile、\texhighinput|
+\textsf{texhigh} 可以输出颜文字：
+\kaomoji{ε(┬┬﹏┬┬)3} ，只需使用 \texhighverb{\kaomoji}\texttt\{\ensuremath{\langle}\verb|颜文字|\ensuremath{\rangle}\texttt\}。
+默认使用系统字体，也可自行设置 \kaomoji{ヾ(≧▽≦*)o}。
+
+% https://emojicombos.com/cute-kaomoji
+\kaomoji{ଘ(੭*ˊᵕˋ)੭* ੈ♡‧₊˚}\quad
+\kaomoji{ ପ(๑•ᴗ•๑)ଓ ♡}\quad
+\kaomoji{ ૮₍˶ •. • ⑅₎ა ♡}\quad
+% \kaomoji{໒꒰⁠ྀིᵔ ᵕ ᵔ ꒱⁠ྀི১}\quad
+\kaomoji{໒꒰⁠ྀི ᵔ ᵕ ᵔ꒱⁠ྀི১}\quad
+\kaomoji{(╯°□°）╯︵ ┻━┻}
+
+% 由于 texhigh 使用的 cosmic-text 库在处理 font fallback 时仍有缺陷，
+使用颜文字时可能会遇到字体问题，这时在字符间插入零宽词连接符 \texttt{U+2060} 或可解决。
+% 这会影响字簇的分割，从而为某些字符查找更加合适的字体。
+
+使用 \texhighverb|\kaomoji*| 还支持把单行文字输出为图片：
+\begin{examcode}[texhigh options={
+  char-category={emoji}{[\p{Emoji}--\p{ASCII}]}{\mbox{\emojifont #1}} % ASCII digit is emoji!
+}]{}
+% 这里的 fontsize 影响图片的大小，从而影响清晰度
+\kaomoji*[fontsize*=\Huge]{🐀🐃🐅🐇🐉🐍🐎🐐🐒🐓🐕🐖}{\includegraphics[height=12bp]}
+
+\kaomoji*[fontsize=50bp]{\Uchar"1F43C }{\includegraphics[height=25bp]}
+\end{examcode}
+
+也可以自己封装一下这个命令：
+\begin{examcode}[texhigh options={
+  use-ctab=latexcode,
+  char-category={emoji}{[\p{Emoji}--\p{ASCII}]}{\mbox{\emojifont #1}} % ASCII digit is emoji!
+}]{}
+\makeatletter
+\NewDocumentCommand\inmoji{ D<>{\f@size\p@} ={fonts+} O{} m }
+  {\kaomoji*[fontsize={(#1)*3},#2]{#3}
+    {\includegraphics[height=\dimeval{#1}]}}
+\makeatother
+\inmoji{🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛} \inmoji{^o^y}
+\end{examcode}
+
+\textsf{texhigh} 提供 \texhighverb|\texhighverb、\texhighfile、\texhighinput|
 这几个命令以及一个 \textsf{texhigh} 环境用于高亮 \TeX 代码。
 
 \textsf{texhigh} 还有很强的可配置性。
@@ -66,11 +117,11 @@ texhigh\footnote{https://github.com/Sophanatprime/texhigh-rs}，
 \usepackage{tcolorbox}
 \usepackage{texhigh}
 \tcbset{listing engine=texhigh} % 使用这个即可切换至 texhigh 
-若使用 xeCJK，即在 XeLaTeX 中使用 ctex，最好设置
-\SetKeys[texhigh]{
+% 若使用 xeCJK，即在 XeLaTeX 中使用 ctex，最好设置
+\SetKeys[texhigh/high]{
   font=\ttfamily\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}
 }
-这样可避免在显示代码时中英文之间出现不必要的空格。
+% 这样可避免在显示代码时中英文之间出现不必要的空格。
 \end{examcode}
 
 识别行内数学公式：
@@ -84,8 +135,9 @@ texhigh\footnote{https://github.com/Sophanatprime/texhigh-rs}，
 \end{examcode}
 
 底纹：
-\begin{examcode}[texhigh options={use-ctab=latexcode}]{}
+\begin{examcode}[texhigh options={use-ctab=latexcode, lexer-catcode*={9}{10}{explon}}]{}
 \makeatletter
+% #1: tikz options, #2: text
 \def\myshadetext#1#2{\texhigh@shadetext{#1}{\bfseries #2}}
 \makeatother
 {\LARGE
@@ -104,17 +156,150 @@ texhigh\footnote{https://github.com/Sophanatprime/texhigh-rs}，
 \end{texhigh}
 \end{examcode}
 
-\bigskip
-\noindent\texhighverb|%%% 以下输出本文源码 %%%|
-\texhighfile[style=tikz.gradient, use-ctab=cjkl3]{\jobname.tex}
-\noindent\texhighverb|%%% 以上是本文源码 %%%|
+类别码混合使用：
 
-\vspace{1cm}
-\noindent\texhighverb|%%%---- File: texhigh.sty ----%%%|
-\texhighfile[use-ctab=latex3code, config-file=config.cfg]{texhigh.sty}
+\begin{examcode}[texhigh style=plain0, texhigh gobble]{}
+% 自动检测 \makeatletter 和 \ExplSyntaxOn 块，
+% 但 \makeatletter 这几个命令必需在行首，前面可以有空格
+\begin{texhigh}[lexer-catcode={atletter, explon}]
+\def\foo@#1{[#1]} \foo@{FOO} \@kernel
+\makeatletter
+\def\foo@:#1{[#1]} \foo@:#1{FOO} \@kernel \scan_stop:
+\ExplSyntaxOn
+\cs_set:Npn \foo@: #1 { [#1] }
+\foo@: {FOO} \@kernel \scan_stop:
+\ExplSyntaxOff
+\@kernel \scan_stop:
+\makeatother
+\@kernel \scan_stop:
+\end{texhigh}
+\end{examcode}
 
-\vspace{1cm}
-\noindent\texhighverb|%%%---- File: texhigh.prelude.ths ----%%%|
-\texhighfile[use-ctab=latexcode, config-file=config.cfg]{texhigh.prelude.ths}
+也可手动调整类别码：
+\begin{examcode}[texhigh style=plain0]{}
+\begin{texhigh}[
+  lexer-catcode*={3}{9}{@=11, ?=11}, % [3, 9) 行，@ 和 ? 的类别码为 11
+   % lexer-catcode*={3}{9}{ @?=11 }, % <- 可以合并
+  lexer-catcode*={5}{7}{explon},     % [5, 7) 行，启用 expl3 的类别码
+]
+\def\foo@#1{[#1]} \foo@{FOO} \@kernel
+\makeatletter
+\def\foo@:#1{[#1]} \foo@:#1{FOO} \@kerne? \scan_stop:
+\ExplSyntaxOn
+\cs_set:Npn \foo@: #1 { [#1] }
+\foo@: {FOO} \@kernel \scan_stop:
+\ExplSyntaxOff
+\@kernel \scan_stop:
+\makeatother
+\@kernel \scan_stop:
+\end{texhigh}
+\end{examcode}
+
+除了用 use-ctab 设置主类别码表以外，
+还可以添加额外的类别码表，优先选择靠后的类别码表：
+\begin{examcode}[texhigh style=plain0]{}
+\texhighverb[extra-catcode*=cjk, extra-catcode*=explon]
+  {\cs_set:Npn \a_好的: #1 { aaa } \a_好的:}
+
+% extra-catcode* 实际相当于设置 lexer-catcode* 的前两个值为 {0}{}
+% 即，从第 0 行开始，永不结束
+\texhighverb[lexer-catcode*={0}{}{cjk}]{\def\a和的#1{aaa} \a好的}
+\end{examcode}
+
+还能进一步细化到列数：
+\begin{examcode}[texhigh style=plain0]{}
+% 1 相当于 [1, 0]，
+% [1, 9] 表示第 1 行第 9 个字符
+% 这里就是从第一行的开始，直到第一行第 9 个字符（不含），空格的类别码为 0
+% 设置类别码时，特殊字符必须转义，其它字符可转义也可不转义
+\texhighverb[lexer-catcode*={1}{[1,9]}{\ =0}]{abd def  #1{\space  }}
+%                                      ^^--转义       ^--空格的类别码不再是 0
+
+\texhighverb{abd def  #1"\space"}
+\end{examcode}
+
+\texttt{lexer-catcode*} 的前两个参数还支持更加复杂的模式，如字符串正则表达式 和 \TeX 正则表达式：
+\begin{examcode}[texhigh style=plain0, sidebyside, sidebyside gap=4mm, righthand width=62mm]{}
+% \I 放在开头表示这是字符串正则表达式，匹配源码
+\begin{texhigh}[gobble=2, % 每行删除前两个字符
+  lexer-catcode*=
+    {\I\\catcode`\\!=11[\s\\]}
+    {\I\\endgroup\s}
+    {!=11},
+]
+  \def\!mark#1{MARK1} \!mark
+  \begingroup
+    \catcode`\!=11
+    \def\!mark#1{MARK2} \!mark
+    \endgroupp \!mark
+  \endgroup
+  \!mark
+\end{texhigh}
+\end{examcode}
+
+\begin{examcode}[texhigh style=plain0, sidebyside, sidebyside gap=4mm, righthand width=62mm]{}
+% \T 放在开头表示这是 TeX 正则表达式，匹配 token
+% \T 大多数时候可以省略，但当模式以数字或 [ 开头时，\T 不可省略，否则被当作行号
+\begin{texhigh}[gobble=auto, % 检测空格并删除
+  lexer-catcode*=
+    {\T\c{catcode}\`\c{!}\=11} % 注意字符转义
+    {\c{endgroup}}
+    {!=11},
+]
+  \def\!mark#1{MARK1} \!mark
+  \begingroup
+    \catcode`\!=11
+    \def\!mark#1{MARK2} \!mark
+    \endgroupp \!mark
+  \endgroup
+  \!mark
+\end{texhigh}
+\end{examcode}
+
+\begin{examcode}[texhigh style=plain0, sidebyside, sidebyside gap=4mm, righthand width=62mm]{}
+\begin{texhigh}[gobble=auto, % 检测空格并删除
+  lines={2,8}, % 只保留 [2, 8) 行
+  lexer-catcode*=
+    {\T\c{catcode}\`\c{!}\=11} % 注意字符转义
+    {\c{endgroup}}
+    {!=11},
+]
+      \kill this line
+  \def\!mark#1{MARK1} \!mark
+  \begingroup
+    \catcode`\!=11
+    \def\!mark#1{MARK2} \!mark
+    \endgroupp \!mark
+  \endgroup
+  \!mark
+\end{texhigh}
+\end{examcode}
+
+\begin{examcode}[texhigh style=plain0]{}
+% \THSetCharReplacement{\ }{\textvisiblespace} % texhigh 已设置
+\THSetCharReplacement{\$}{\S} % 把 $ 替换为 \S
+\texhighverb[char-replacements={\ \$}, % 设置哪些字符要替换
+  char-category={symbol}{[\ \$]}{\mbox{\color{red}#1}}, % 修改颜色
+] {\def\a #1{$#1$} \a {\ b}}
+
+\texhighverb[char-replacements={a=A, b=B, {=}={,}}]{abcd=$}
+\end{examcode}
+
+% \bigskip
+% \noindent\texhighverb|%%% 以下输出本文源码 %%%|
+% \texhighfile[style=tikz.gradient, use-ctab=cjkl3]{\jobname.tex}
+% \noindent\texhighverb|%%% 以上是本文源码 %%%|
+
+% \vspace{1cm}
+% \noindent\texhighverb|%%%---- File: texhigh.sty ----%%%|
+% \texhighfile[use-ctab=latex3code, config-file=config.cfg]{texhigh.sty}
+
+% \vspace{1cm}
+% \noindent\texhighverb|%%%---- File: texhigh.prelude.ths ----%%%|
+% \texhighfile[use-ctab=latexcode, config-file=config.cfg]{texhigh.prelude.ths}
+
+% \newpage
+% \newgeometry{hmargin=1cm, top=1.5cm, bottom=1.2cm}
+% \texhighfile[use-ctab=latex3code,enhanced,font+=\small]{expl3-code.tex}
 
 \end{document}
