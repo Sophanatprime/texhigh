@@ -58,9 +58,10 @@
   \THSetClassBP{?}
     {\discretionary
       {\hbox{{\THcolor{gray8}\ $\hookleftarrow$}}}
-      {\hbox{{\THcolor{gray8}$\hookrightarrow$\ }}}{}}%
+      {\hbox{{\THcolor{gray8}$\hookrightarrow$\ }}}
+      {}}%
   \THSetClassCS{texhigh}{{\fboxsep\z@% for texhigh package itself
-    \fcolorbox{yellow9}{yellow9}{\strut\THcolor{black}\bfseries#1#2}}}%
+    \fcolorbox{yellow9}{yellow9}{\linespread{1}\bfseries\strut\THcolor{black}#1#2}}}%
   \THSetClassCS{latex3.primitive}{\mbox{\THcolor{red4}\bfseries#1#2}}% #1=escape char, #2=cs name
   \THSetClassCS{latex3.kernel}{\mbox{\THcolor{red4}\bfseries#1#2}}%
   \THSetClassCS{latex3.variable}{\mbox{\THcolor{azure6}#1#2}}%
