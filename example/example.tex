@@ -16,7 +16,8 @@
 \newfontfamily\emojifont{Noto Emoji}
 % 若系统没有这些字体会自动忽略
 \SetKeys[texhigh/layout]{fonts={Segoe UI,Segoe UI Symbol,Arial,Microsoft YaHei UI,PingFang SC,FandolHei}}
-\SetKeys[texhigh/high]{cache-dir=texhigh-cache/} % cache-dir 不要忘记加 /
+\SetKeys[texhigh/high]{cache-dir=texhigh-cache/, % cache-dir 不要忘记加 /
+  cs-category*={texhigh}{^.{0,3}?texhigh.+|^TH.+|^TeXHigh$|^kaomoji$}{\THPASS}}
 \tcbset{listing engine=texhigh, listing file=texhigh-cache/\jobname.listing}
 \newcounter{example}
 \newtcblisting[use counter=example, number format=\arabic]
@@ -75,7 +76,7 @@ texhigh 的增强模式也比它快 10 到 15 倍。
 
 使用 \texhighverb|\kaomoji*| 还支持把单行文字输出为图片：
 \begin{examcode}[texhigh options={
-  char-category={emoji}{[\p{Emoji}--\p{ASCII}]}{\mbox{\emojifont #1}} % ASCII digit is emoji!
+  char-category*={emoji}{[\p{Emoji}--\p{ASCII}]}{\mbox{\emojifont #1}} % ASCII digit is emoji!
 }]{}
 % 这里的 fontsize 影响图片的大小，从而影响清晰度
 \kaomoji*[fontsize*=\Huge]{🐀🐃🐅🐇🐉🐍🐎🐐🐒🐓🐕🐖}{\includegraphics[height=12bp]}
@@ -86,7 +87,7 @@ texhigh 的增强模式也比它快 10 到 15 倍。
 也可以自己封装一下这个命令：
 \begin{examcode}[texhigh options={
   use-ctab=latexcode,
-  char-category={emoji}{[\p{Emoji}--\p{ASCII}]}{\mbox{\emojifont #1}} % ASCII digit is emoji!
+  char-category*={emoji}{[\p{Emoji}--\p{ASCII}]}{\mbox{\emojifont #1}} % ASCII digit is emoji!
 }]{}
 \makeatletter
 \NewDocumentCommand\inmoji{ D<>{\f@size\p@} ={fonts+} O{} m }
@@ -279,10 +280,11 @@ texhigh 的增强模式也比它快 10 到 15 倍。
 % \THSetCharReplacement{\ }{\textvisiblespace} % texhigh 已设置
 \THSetCharReplacement{\$}{\S} % 把 $ 替换为 \S
 \texhighverb[char-replacements={\ \$}, % 设置哪些字符要替换
-  char-category={symbol}{[\ \$]}{\mbox{\color{red}#1}}, % 修改颜色
+  char-category*={symbol}{[\ \$]}{\mbox{\color{red}#1}}, % 修改颜色
 ] {\def\a #1{$#1$} \a {\ b}}
 
 \texhighverb[char-replacements={a=A, b=B, {=}={,}}]{abcd=$}
+\texhighverb[enhanced=false, char-replacements={a=A, b=B, {=}={,}}]{abcd=$}
 \end{examcode}
 
 % \bigskip
