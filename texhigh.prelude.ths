@@ -1,6 +1,7 @@
 \ProcessKeyOptions[texhigh/prelude]
 
 \THSetCharReplacement{\ }{\textvisiblespace}
+% \THSetCharReplacement*{\ }{\ifincsname\space\else\textvisiblespace\fi}
 \THSetCharReplacement{\^^I}{\mbox{\THcolor{gray8}$\rightarrow$}}
 
 \texhighsetclassfallback{ch}{group.0}{group}
@@ -61,8 +62,8 @@
       {\hbox{{\THcolor{gray8}$\hookrightarrow$\ }}}
       {}}%
   \THSetClassCS{texhigh}{{\fboxsep\z@% for texhigh package itself
-    \fcolorbox{yellow9}{yellow9}{\linespread{1}\bfseries\strut\THcolor{black}#1#2}}}%
-  \THSetClassCS{latex3.primitive}{\mbox{\THcolor{red4}\bfseries#1#2}}% #1=escape char, #2=cs name
+    \fcolorbox{yellow}{yellow}{\linespread{1}\bfseries\strut\THcolor{black}#1#2}}}% #1=escape char, #2=cs name
+  \THSetClassCS{latex3.primitive}{\mbox{\THcolor{red4}\bfseries#1#2}}%
   \THSetClassCS{latex3.kernel}{\mbox{\THcolor{red4}\bfseries#1#2}}%
   \THSetClassCS{latex3.variable}{\mbox{\THcolor{azure6}#1#2}}%
   \THSetClassCS{latex3.function}{\mbox{\THcolor{green5}#1#2}}%
@@ -72,12 +73,13 @@
   \THSetClassCS{latex}{\mbox{\THcolor{yellow8}#1#2}}%
   \THSetClassCS{primitive}{\texhigh@underline{\THcolor{purple5}\bfseries#1#2}}%
   \THSetClassCS{?}{\mbox{\THcolor{magenta5}#1#2}}%
+  \THSetClassCH{?}{#1}% char
+  \THSetClassPN{?}{#1}% punctuation
   \THSetClassCH{group}{\mbox{\THcolor{purple3}#1}}%
   \THSetClassCH{group.1}{\mbox{\THcolor[HTML]{179FFF}#1}}
   \THSetClassCH{group.2}{\mbox{\THcolor[HTML]{DA6ED6}#1}}
   \THSetClassCH{group.3}{\mbox{\THcolor[HTML]{F8BA16}#1}}
   \THSetClassCH{group.miss}{\mbox{\THcolor{red}#1}}%
-  \THSetClassCH{?}{\mbox{#1}}%
   \THSetClassCH{digit}{\mbox{\THcolor{azure8}#1}}%
   \THSetClassRS{comment}{\begingroup\THcolor[gray]{0.5}\THSetPlainStyle{cs,color}}%
   \THSetClassRE{comment}{\endgroup}%

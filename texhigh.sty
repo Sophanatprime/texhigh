@@ -119,6 +119,7 @@
   \expandafter\relax\csname texhigh@savestyle\expanded{\endcsname{#1}}
 }
 \def\texhigh@savestyle#1#2 {
+  \seq_set_eq:cN { texhigh@style-subcate/#1 } \c_empty_seq
   \tl_set:cn {texhigh@style/#1}{
     \let\texhigh@saved@name\texhigh@curr@name
     \let\texhigh@curr@name\@empty
@@ -167,7 +168,9 @@
 \seq_new:c { texhigh@style-subcate/ee }
 \seq_new:c { texhigh@style-subcate/pn }
 \cs_new_protected:Npn \@texhigh@push #1#2
-  { \seq_put_right:ce { texhigh@style-subcate/#1 } {#2} }
+  {
+    \seq_put_right:ce { texhigh@style-subcate/#1 } {#2}
+  }
 \NewDocumentCommand \THRemoveClass { m !O{\texhigh@curr@name} }
   {
     \seq_map_inline:cn { texhigh@style-subcate/#1#2 }
@@ -387,6 +390,9 @@
 
     font .tl_set:N = \l__texhigh_font_tl ,
     font .initial:n = \ttfamily ,
+    before-text  .tl_set:N = \l__texhigh_before_text_tl ,
+    before-text .initial:n = \raggedright ,
+    before-text+ .code:n = \tl_put_right:Nn \l__texhigh_before_text_tl {#1} ,
     font+ .code:n = \tl_put_right:Nn \l__texhigh_font_tl {#1} ,
     style .code:n = \clist_map_inline:nn {#1} { \THUseSavedStyle {##1} } ,
     style .groups:n = format ,
@@ -407,7 +413,7 @@
     lexer-catcode/atletter .code:n = \__texhigh_add_lexer_catcode:nnn
       {(?:^|\cJ.|\n)\s*\c{makeatletter}$}{(?:^|\cJ.|\n)\s*\c{makeatother}$}{atletter} ,
     lexer-catcode/explon .code:n = \__texhigh_add_lexer_catcode:nnn
-      {(?:^|\cJ.|\n)\s*\c{ExplSyntaxOn}$}{(?:^|\cJ.|\n)\s*\c{ExplSyntaxOff}$}{explon} ,
+      {(?:^|\cJ.|\n)\s*\c{ExplSyntaxOn}$}{(?:^|\cJ.|\n)\s*\c{ExplSyntaxOff}$}{\:\_=11, \ =9} ,
     no-lexer     .code:n = \seq_clear:N \l__texhigh_lexers_seq ,
   }
 \cs_new_protected:Npn \__texhigh_set_short_int:nn #1#2
@@ -559,16 +565,18 @@
   }
 \cs_new_protected:Npn \__texhigh_options:
   {
-    \l__texhigh_font_tl \raggedright
+    \l__texhigh_font_tl \l__texhigh_before_text_tl
   }
 \NewDocumentCommand\texhighverb{ s +O{} +v }
+  { \bool_if:nTF {#1} { \texhightext * } { \texhightext } [{#2}] {#3} }
+\NewDocumentCommand\texhightext{ s +O{} +m }
   {
     \group_begin:
     \tl_set:Nn \l__texhigh_command_tl { high }
     \int_set:Nn { \endlinechar } { -1 }
     \keys_set:nn { texhigh/high } {#2}
     \__texhigh_options:
-    \__texhigh_get_text:n {#3}
+    \__texhigh_get_text:n { \tl_to_str:n {#3} }
     \group_end:
   }
 \NewDocumentCommand\texhighfile{ +O{} m }
