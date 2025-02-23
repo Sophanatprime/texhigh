@@ -576,7 +576,7 @@
     \int_set:Nn { \endlinechar } { -1 }
     \keys_set:nn { texhigh/high } {#2}
     \__texhigh_options:
-    \__texhigh_get_text:n { \tl_to_str:n {#3} }
+    \__texhigh_get_text:e { \tl_to_str:n {#3} }
     \group_end:
   }
 \NewDocumentCommand\texhighfile{ +O{} m }
@@ -623,15 +623,15 @@
     \dim_set:Nn \parindent { 0pt }
     \linespread{1} \selectfont
   }
-\cs_new_protected:Npn \__texhigh_get_text:n #1
+\cs_new_protected:Npn \__texhigh_get_text:e #1
   {
     \str_if_in:nnTF {#1} { " }
       % {
       %   \__texhigh_verb_text:nn \l__texhigh_fn_tl {#1}
       %   \tex_input:D | " \__texhigh_args_with_file:n \l__texhigh_fn_tl "
       % }
-      { \tex_input:D | " \__texhigh_args_with_text_base:n {#1} " }
-      { \tex_input:D | " \__texhigh_args_with_text:n {#1} " }
+      { \tex_input:D | " \__texhigh_args_with_text_base:e {#1} " }
+      { \tex_input:D | " \__texhigh_args_with_text:e {#1} " }
   }
 \cs_new_protected:Npn \__texhigh_get_last:
   {
@@ -645,17 +645,17 @@
         \file_input:V \l__texhigh_output_tl
       }
   }
-\cs_new:Npn \__texhigh_args_with_text:n #1
+\cs_new:Npn \__texhigh_args_with_text:e #1
   {
     texhigh \c_space_tl
     \__texhigh_args:
     --text \c_space_tl '#1'
   }
-\cs_new:Npn \__texhigh_args_with_text_base:n #1
+\cs_new:Npn \__texhigh_args_with_text_base:e #1
   {
     texhigh \c_space_tl
     \__texhigh_args:
-    --text-base64 \c_space_tl ' \texhigh_base_encode:n {#1} '
+    --text-base64 \c_space_tl ' \texhigh_base_encode:e {#1} '
   }
 \cs_new:Npn \__texhigh_args_with_file:n #1
   {
