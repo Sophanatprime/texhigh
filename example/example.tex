@@ -17,7 +17,7 @@
 \newfontfamily\emojifont{Noto Emoji}
 % 若系统没有这些字体会自动忽略
 \SetKeys[texhigh/layout]{fonts={Segoe UI,Segoe UI Symbol,Arial,Microsoft YaHei UI,PingFang SC,FandolHei}}
-\SetKeys[texhigh/high]{cache-dir=texhigh-cache/, % cache-dir 不要忘记加 /
+\SetKeys[texhigh/high]{cache-dir=texhigh-cache/, % cache-dir 不要忘记加 /，注意：需要先创建 texhigh-cache 文件夹！！
   cs-category*={texhigh}{^.{0,3}?texhigh.+|^TH.+|^TeXHigh$|^kaomoji$}{\THPASS}}
 \tcbset{listing engine=texhigh, listing file=texhigh-cache/\jobname.listing}
 \newcounter{example}
