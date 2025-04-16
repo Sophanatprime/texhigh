@@ -217,7 +217,7 @@ texhigh 除了可用于高亮 \TeX 文件，还支持计算文字的布局。
 
 % extra-catcode* 实际相当于设置 lexer-catcode* 的前两个值为 {0}{}
 % 即，从第 0 行开始，永不结束
-\texhighverb[lexer-catcode*={0}{}{cjk}]{\def\a和的#1{aaa} \a好的}
+\texhighverb[lexer-catcode*={0}{}{cjk}]{\def\a好的#1{aaa} \a好的}
 \end{examcode}
 
 还能进一步细化到列数：
