@@ -1,4 +1,4 @@
-\ProvidesExplPackage{texhigh}{2024-02-20}{0.2.0}{highlight TeX string}
+\ProvidesExplPackage{texhigh}{2024-04-16}{0.2.2}{highlight TeX string}
 \int_new:N \l__texhigh_tmp_int
 \def\texhigh@style@ext{ths}
 \cs_new_protected:Npn \texhigh@inputstyle #1#2#3 % style, options, date
@@ -362,6 +362,7 @@
     config-file .groups:n = command ,
     config-file+ .code:n = \clist_put_right:Nn \l__texhigh_config_file_clist {#1} ,
     config-file+ .groups:n = command ,
+    break-at   .code:n = \__texhigh_break_at:n {#1} ,
     gobble     .code:n = \__texhigh_set_short_int:nn { gobble } {#1} ,
     gobble   .groups:n = command ,
     tabs-len   .code:n = \__texhigh_set_short_int:nn { tabs_len } {#1} ,
@@ -416,24 +417,37 @@
       {(?:^|\cJ.|\n)\s*\c{ExplSyntaxOn}$}{(?:^|\cJ.|\n)\s*\c{ExplSyntaxOff}$}{\:\_=11, \ =9} ,
     no-lexer     .code:n = \seq_clear:N \l__texhigh_lexers_seq ,
   }
+\cs_new_protected:Npn \__texhigh_break_at:n #1
+  {
+    \clist_put_right:Ne \l__texhigh_config_base_clist
+      { {
+        break_at \c_space_tl
+        \texhigh_base_encode:e
+          { [ \tl_map_function:nN {#1} \__texhigh_char_try_escape:N ] }
+      } }
+  }
+\cs_new:Npn \__texhigh_char_try_escape:N #1
+  {
+    \int_compare:nNnTF { `#1 } = { `\' }
+      { "'" } { ' \char_generate:nn { `#1 } { 12 } ' }
+      ,
+  }
 \cs_new_protected:Npn \__texhigh_set_short_int:nn #1#2
   {
     \str_if_eq:nnTF {#2} { auto }
       { \int_set:Nn \l__texhigh_tmp_int { -1 } }
       { \int_set:Nn \l__texhigh_tmp_int { #2 } }
     \clist_put_right:Ne \l__texhigh_config_base_clist
-      { 
-        {
-          #1 \c_space_tl
-          ' 
-            \texhigh_base_encode:e 
-              {
-                \int_compare:nNnTF \l__texhigh_tmp_int < { 0 }
-                  { 'auto' } { \int_use:N \l__texhigh_tmp_int }
-              }
-          '
-        }
-      }
+      { {
+        #1 \c_space_tl
+        ' 
+          \texhigh_base_encode:e 
+            {
+              \int_compare:nNnTF \l__texhigh_tmp_int < { 0 }
+                { 'auto' } { \int_use:N \l__texhigh_tmp_int }
+            }
+        '
+      } }
   }
 \cs_new_protected:Npn \__texhigh_set_lines:n #1
   {

@@ -57,10 +57,10 @@
 
 \THSaveStyle{basic}{%
   \THSetClassBP{?}
-    {\discretionary
+    {\ifhmode\discretionary
       {\hbox{{\THcolor{gray8}\ $\hookleftarrow$}}}
       {\hbox{{\THcolor{gray8}$\hookrightarrow$\ }}}
-      {}}%
+      {}\fi}%
   \THSetClassCS{texhigh}{{\fboxsep\z@% for texhigh package itself
     \fcolorbox{yellow}{yellow}{\linespread{1}\bfseries\strut\THcolor{black}#1#2}}}% #1=escape char, #2=cs name
   \THSetClassCS{latex3.primitive}{\mbox{\THcolor{red4}\bfseries#1#2}}%
@@ -91,8 +91,9 @@
 \THUseSavedStyle{basic}
 
 \long\def\texhigh@underline#1{\leavevmode\setbox\z@\hbox{{#1}}%
-  \hb@xt@\wd\z@{\rlap{\unhcopy\z@}%
-    \kern.05em\vrule height-.25ex depth.4ex width\dimexpr\wd\z@-.1em\relax \kern.05em}}
+  \hb@xt@\wd\z@{\kern.05em
+    \vrule height-.25ex depth.4ex width\dimexpr\wd\z@-.1em\relax \kern.05em
+    \llap{\unhbox\z@}}}
 
 \if@texhighload@color
   \relax
