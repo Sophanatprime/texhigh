@@ -2044,7 +2044,7 @@
       {
         \iow_close:N \g_tmpa_iow
         \texhighfile [codedoc-style] { \c_sys_jobname_str . texhigh . verb }
-        \__codedoc_texhigh_angle:w #1
+        \__codedoc_texhigh_angle:w #1 \q__codedoc_stop
         \iow_open:Nn \g_tmpa_iow { \c_sys_jobname_str . texhigh . verb }
       }
       {
@@ -2052,8 +2052,15 @@
       }
     \__codedoc_texhigh_iter:w ^^M
   }
-\cs_new:Npn \__codedoc_texhigh_angle:w %< #1 >
-  { \Module {#1} }
+\cs_new:Npn \__codedoc_texhigh_angle:w %< #1 > #2 \q__codedoc_stop
+  {
+    \Module {#1}
+    \tl_if_empty:nF {#2} 
+      { {
+        \cs_set_eq:NN \__texhigh_args_with_text:e \__texhigh_args_with_text_base:e
+        \texhightext [codedoc-style] {#2} 
+      } }
+  }
 \group_end:
 \cs_generate_variant:Nn \__codedoc_texhigh:n { V }
 \group_begin:
@@ -2552,6 +2559,37 @@
     \DisableCrossrefs
     \OnlyDescription
   }
-%% 
+
+\group_begin:
+\char_set_catcode_active:N \^^M
+\hook_gput_code:nnn { begindocument } { l3doc-patch-source2edoc }
+  {
+    \cs_if_exist:NT \oc@percent
+      {
+        \cs_gset_nopar:Npn \oc@percent #1 ^^M
+          {
+            \mode_if_vertical:TF
+              {
+                \def\commentline{#1}
+                \tl_if_eq:NNTF \commentline \oldc
+                  {
+                    \textit{End of historical \LaTeX\,2.09 comments.}
+                    \end{oldcomments}
+                  }
+                  {
+                    \tl_if_eq:NNTF \commentline \begmac
+                      { \begin{macrocode} ^^M }
+                      { \leavevmode #1 ^^M }
+                  }
+              }
+              {
+                {\oc@ttf\char`\%}#1^^M
+              }
+          }
+      }
+  }
+\group_end:
+
+%%
 %%
 %% End of file `l3doc.cls'.
