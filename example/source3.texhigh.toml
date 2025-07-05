@@ -1,0 +1,5 @@
+gobble = 0
+# do not break at any characters
+break_at = []
+# do not break before any control sequences
+do_not_break = [ '\T\cX.' ]
