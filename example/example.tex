@@ -346,6 +346,32 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
   ] {Emoji: 🐀🐃🐅🐇🐉🐍🐎🐐🐒🐓🐕🐖}
 \end{examcode}
 
+\textsf{texhigh} 支持与 \textsf{listings} 和 \textsf{minted} 类似的在高亮时让某些记号保持其原有作用的特性。
+\begin{examcode}{}
+\begin{texhigh}[texcl, escape-inside=||, escape-inside=\ES, gobble=auto]
+  % This \textbf{comment} line \emph{will be} escaped.
+  This \textbf{text} line \ES{\emph{won't} be} escaped.
+  This |\textbf{will}| be escaped.
+\end{texhigh}
+\end{examcode}
+
+事实上，它们有更通用的写法：
+\begin{examcode}{}
+\DeclareDocumentCommand\cs{O{\texttt}m}
+  {#1{\textbackslash\detokenize{#2}}}
+\DeclareDocumentCommand\pkg{m}{\textsf{#1}}
+\begin{texhigh}[gobble=auto,
+  % start 用于标记何时开始，为 TeX 正则表达式或纯文本正则表达式或纯文本
+  % arguments 用于指示它获取的参数，像 ltcmd（xparse）定义命令时使用的一样
+  % in-comments 用于表示它是否需处于注释内
+  range={cs}{escape, start=^\c{cs}, arguments=om, in-comments},
+  range={pkg}{escape, start=^\c{pkg}, arguments=m},
+]
+  % The \cs{c_true_bool} is true in \pkg{l3bool}.
+  The \cs{c_false_bool} is false in \pkg{l3bool}.
+\end{texhigh}
+\end{examcode}
+
 \textsf{texhigh} 默认的定义以及部分命令的用法可参考 \texttt{texhigh.prelude.ths} 文件。
 
 \small
