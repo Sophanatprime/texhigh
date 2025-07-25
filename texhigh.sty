@@ -1,4 +1,18 @@
 \ProvidesExplPackage{texhigh}{2024-07-05}{0.2.3}{highlight TeX string}
+
+\cs_new_protected:Npn \texhigh_check_bin:TF #1#2
+  {
+    \sys_get_shell:nnNTF { texhigh } { \cctab_select:N \c_str_cctab } \l_tmpa_tl
+      { \str_if_in:NnTF \l_tmpa_tl { Wenjian~Chern } {#1} {#2} }
+      {#2}
+  }
+\texhigh_check_bin:TF { }
+  {
+    \msg_new:nnn { texhigh } { bin-not-found }
+      { I~cannot~find~texhigh~binary~file.~Did~you~install~it~successfully? }
+    \msg_fatal:nn { texhigh } { bin-not-found }
+  }
+
 \int_new:N \l__texhigh_tmp_int
 \def\texhigh@style@ext{ths}
 \cs_new_protected:Npn \texhigh@inputstyle #1#2#3 % style, options, date
@@ -93,7 +107,7 @@
       { \color_select:nn {#1} {#2} }
   }
 \AtBeginDocument{\@ifpackageloaded{xcolor}
-  {\cs_gset:Npn \TH@c@lor { \color } }{}}
+  { \cs_gset:Npn \TH@c@lor { \color } }{}}
 \cs_new_protected_nopar:Npn \THcolor { \TH@c@lor }
 \NewDocumentCommand \__texhigh_use_none_om:w { O{} m } {}
 \cs_new_protected:Npn \THcolorPlain { \__texhigh_use_none_om:w }
@@ -197,6 +211,9 @@
 \newcommand\THSetClassPN[3][\texhigh@curr@name]{\@texhigh@push{pn#1}{#2}\@namedef{TH@pn#1@#2}##1{#3}}
 \newcommand\THLetClassPN[3][\texhigh@curr@name]{\@texhigh@push{pn#1}{#2}\TH@letcs{TH@pn#1@#2}{TH@pn#1@#3}}
 
+\def\@texhigh@reset@ctab{}
+\def\@texhigh@reset@font{\normalfont}
+
 \long\def\TH@nl{\leavevmode\@@par}
 \long\@namedef{TH@in}#1{\texhigh@replicate{#1}{ }}
 \long\@namedef{TH@bp@?}{\hskip\z@skip}
@@ -211,7 +228,7 @@
 \long\def\TH@re@PLAIN{\endgroup}
 \long\@namedef{TH@st@?}#1{{#1}}
 \long\def\TH@st@PLAIN#1{{#1}}
-\long\@namedef{TH@es@?}{\begingroup}
+\long\@namedef{TH@es@?}{\begingroup\@texhigh@reset@ctab\@texhigh@reset@font}
 \long\def\TH@es@PLAIN{\begingroup}
 \long\@namedef{TH@ee@?}{\endgroup}
 \long\def\TH@ee@PLAIN{\endgroup}
@@ -344,8 +361,16 @@
   }
 \tl_new:N \l__texhigh_char_replacements_tl
 \seq_new:N \l__texhigh_lexers_seq
+\seq_new:N \l__texhigh_enable_ranges_seq
 \keys_define:nn { texhigh/high }
   {
+    save-catcode .code:n = 
+      {
+        \tl_clear:N \@texhigh@reset@ctab
+        \let\do\__texhigh_save_catcode:N \dospecials
+        #1
+      } , 
+    save-catcode .default:n = , 
     enhanced .bool_set:N = \l__texhigh_enhanced_bool ,
     filename .tl_set:N = \l__texhigh_fn_tl ,
     filename .initial:n = { \l__texhigh_cache_dir_tl \jobname.texhigh.verb } ,
@@ -415,7 +440,14 @@
       {(?:^|\cJ.|\n)\s*\c{makeatletter}$}{(?:^|\cJ.|\n)\s*\c{makeatother}$}{atletter} ,
     lexer-catcode/explon .code:n = \__texhigh_add_lexer_catcode:nnn
       {(?:^|\cJ.|\n)\s*\c{ExplSyntaxOn}$}{(?:^|\cJ.|\n)\s*\c{ExplSyntaxOff}$}{\:\_=11, \ =9} ,
-    no-lexer     .code:n = \seq_clear:N \l__texhigh_lexers_seq ,
+    no-lexer       .code:n = \seq_clear:N \l__texhigh_lexers_seq ,
+    enable-ranges  .code:n = \seq_set_from_clist:Nn \l__texhigh_enable_ranges_seq {#1} ,
+    enable-ranges+ .code:n = \clist_map_inline:nn {#1}
+      { \seq_put_right:Nn \l__texhigh_enable_ranges_seq {##1} } ,
+    escape-inside  .code:n = \__texhigh_add_escape_inside:n {#1} ,
+    texcl      .bool_set:N = \l__texhigh_texcl_bool ,
+    texcomments.bool_set:N = \l__texhigh_texcl_bool ,
+    range          .code:n = \__texhigh_add_range:nn #1 ,
   }
 \cs_new_protected:Npn \__texhigh_break_at:n #1
   {
@@ -507,7 +539,7 @@
     \str_set:Nn \l__texhigh_tmp_str {#1}
     \__texhigh_normalize_string:Nn \l__texhigh_tmp_tl {#2}
     \clist_put_right:Ne \l__texhigh_config_clist
-      { { char_categories.'\l__texhigh_tmp_str' \c_space_tl '\l__texhigh_tmp_tl' } }
+      { { char_categories.'''\l__texhigh_tmp_str''' \c_space_tl '\l__texhigh_tmp_tl' } }
     \tl_if_eq:nnF {#3} { \THPASS } { \THSetClassCH[]{ \l__texhigh_tmp_str }{#3} }
   }
 \cs_new_protected:Npn \__texhigh_add_cs_category:nnn #1#2#3
@@ -515,7 +547,7 @@
     \str_set:Nn \l__texhigh_tmp_str {#1}
     \__texhigh_normalize_string:Nn \l__texhigh_tmp_tl {#2}
     \clist_put_right:Ne \l__texhigh_config_clist
-      { { cs_categories.'\l__texhigh_tmp_str' \c_space_tl '\l__texhigh_tmp_tl' } }
+      { { cs_categories.'''\l__texhigh_tmp_str''' \c_space_tl '\l__texhigh_tmp_tl' } }
     \tl_if_eq:nnF {#3} { \THPASS } { \THSetClassCS[]{ \l__texhigh_tmp_str }{#3} }
   }
 \tl_new:N \l__texhigh_lexer_a_tl
@@ -577,19 +609,127 @@
         { \char_generate:nn {#2} { 12 } }
       ' , #1 ] ,
   }
+\cs_new_protected:Npn \__texhigh_add_escape_inside:n #1
+  {
+    \str_set:Nn \l__texhigh_tmp_str { [#1]escapeinside }
+    \exp_args:NNo \str_remove_all:Nn
+      \l__texhigh_tmp_str \c_backslash_str
+    \tl_if_single_token:nTF {#1}
+      {
+        \seq_put_right:Ne \l__texhigh_enable_ranges_seq { \l__texhigh_tmp_str }
+        \clist_put_right:Ne \l__texhigh_ranges_clist
+          { {
+            ranges.''' \l__texhigh_tmp_str ''' \c_space_tl
+            \texhigh_base_encode:e 
+              {
+                { start='^ \c_backslash_str c { \cs_to_str:N #1 }',
+                  arguments='m', remove_start=true, use_argument=true }
+              }
+          } }
+      }
+      {
+        \tl_set:Nn \l__texhigh_tmpa_tl { \tl_item:nn {#1} { 1 } }
+        \tl_set:Nn \l__texhigh_tmpb_tl { \tl_item:nn {#1} { 2 } }
+        \bool_lazy_or:nnTF
+          { \tl_if_empty_p:N \l__texhigh_tmpa_tl }
+          { \tl_if_empty_p:N \l__texhigh_tmpb_tl }
+          { \msg_error:nnnn { texhigh } { invalid-key-val } { escape-inside } {#1} }
+          {
+            \seq_put_right:Ne \l__texhigh_enable_ranges_seq { \l__texhigh_tmp_str }
+            \clist_put_right:Ne \l__texhigh_ranges_clist
+              { {
+                ranges.''' \l__texhigh_tmp_str ''' \c_space_tl
+                \texhigh_base_encode:e
+                  {
+                    { start='\c_backslash_str L \l__texhigh_tmpa_tl', arguments='u{ \l__texhigh_tmpb_tl }',
+                      remove_start=true, use_argument=true }
+                  }
+              } }
+          }
+      }
+  }
+\clist_new:N \l__texhigh_ranges_clist
+\keys_define:nn { texhigh/__range }
+  {
+    escape .bool_set:N = \l__texhigh_range_escape_bool ,
+    start .code:n = \__texhigh_normalize_string:Nn \l__texhigh_range_start_tl {#1} ,
+    arguments .code:n = \__texhigh_normalize_string:Nn \l__texhigh_range_arguments_tl {#1} ,
+    remove-start .choices:nn = { true, false }
+      { \tl_set_eq:NN \l__texhigh_range_remove_start_tl \l_keys_choice_tl } ,
+    remove-start .default:n = true ,
+    use-argument .choices:nn = { true, false }
+      { \tl_set_eq:NN \l__texhigh_range_use_argument_tl \l_keys_choice_tl } ,
+    use-argument .default:n = true ,
+    insert-ending .choices:nn = { true, false }
+      { \tl_set_eq:NN \l__texhigh_range_insert_ending_tl \l_keys_choice_tl } ,
+    insert-ending .default:n = true ,
+    in-comments .choices:nn = { required, must, forbidden, never, prohibited, irrelevant, any, dontcare }
+      { \tl_set_eq:NN \l__texhigh_range_in_comments_tl \l_keys_choice_tl } ,
+    in-comments .default:n = required ,
+  }
+\cs_new_protected:Npn \__texhigh_add_range:nn #1#2
+  {
+    \str_set:Nn \l__texhigh_tmp_str {#1}
+    \bool_set_false:N \l__texhigh_range_escape_bool
+    \tl_clear:N \l__texhigh_range_start_tl
+    \tl_clear:N \l__texhigh_range_arguments_tl
+    \tl_set:Nn \l__texhigh_range_remove_start_tl { false }
+    \tl_set:Nn \l__texhigh_range_use_argument_tl { false }
+    \tl_set:Nn \l__texhigh_range_insert_ending_tl { false }
+    \tl_set:Nn \l__texhigh_range_in_comments_tl { any }
+    \keys_set:nn { texhigh/__range } {#2}
+    \seq_put_right:Ne \l__texhigh_enable_ranges_seq \l__texhigh_tmp_str
+    \clist_put_right:Ne \l__texhigh_ranges_clist
+      {
+        ranges. ' \l__texhigh_tmp_str ' \c_space_tl
+        \texhigh_base_encode:e
+          {
+            { start='\l__texhigh_range_start_tl', arguments='\l__texhigh_range_arguments_tl',
+              \bool_if:NTF \l__texhigh_range_escape_bool
+                {
+                  remove_start=\l__texhigh_range_remove_start_tl,
+                  use_argument=\l__texhigh_range_use_argument_tl,
+                  insert_ending=\l__texhigh_range_insert_ending_tl,
+                  in_comments='\l__texhigh_range_in_comments_tl'
+                }
+                {
+                  insert_ending=\l__texhigh_range_insert_ending_tl,
+                  in_comments='\l__texhigh_range_in_comments_tl'
+                }
+            }
+          }
+      }
+  }
 \cs_new_protected:Npn \__texhigh_options:
   {
+    \bool_if:NT \l__texhigh_texcl_bool
+      { \seq_put_right:Ne \l__texhigh_enable_ranges_seq { []texcl } }
+    \seq_if_empty:NF \l__texhigh_enable_ranges_seq
+      {
+        \clist_put_right:Ne \l__texhigh_config_base_clist
+          { {
+            enable_ranges \c_space_tl 
+            \texhigh_base_encode:e { \__texhigh_seq_to_str_vec:N \l__texhigh_enable_ranges_seq }
+          } }
+      }
+    \clist_put_right:No \l__texhigh_config_base_clist \l__texhigh_ranges_clist
     \l__texhigh_font_tl \l__texhigh_before_text_tl
   }
+\cs_new:Npn \__texhigh_seq_to_str_vec:N #1
+  { [ \seq_map_function:NN #1 \__texhigh_to_str_vec:n ] }
+\cs_new:Npn \__texhigh_to_str_vec:n #1 { '#1', }
+\msg_new:nnn { texhigh } { invalid-key-val }
+  { The~value~`#2'~is~invalid~for~key~`#1'. }
 \NewDocumentCommand\texhighverb{ s +O{} +v }
   { \bool_if:nTF {#1} { \texhightext * } { \texhightext } [{#2}] {#3} }
 \NewDocumentCommand\texhightext{ s +O{} +m }
   {
     \group_begin:
-    \tl_set:Nn \l__texhigh_command_tl { high }
+    \__texhigh_init:
     \int_set:Nn { \endlinechar } { -1 }
     \keys_set:nn { texhigh/high } {#2}
     \__texhigh_options:
+    \__texhigh_input_init:
     \__texhigh_get_text:e { \tl_to_str:n {#3} }
     \group_end:
   }
@@ -597,12 +737,13 @@
   {
     \@@par
     \group_begin:
+    \__texhigh_init:
     \__texhigh_env_init:
     \tl_clear:N \l__texhigh_output_tl
-    \tl_set:Nn \l__texhigh_command_tl { high }
     \keys_set:nn { texhigh/high } {#1}
     \__texhigh_options:
     \tl_set:Nn \l__texhigh_fn_tl {#2}
+    \__texhigh_input_init:
     \__texhigh_get_last: 
     \@@par
     \group_end:
@@ -611,31 +752,48 @@
   {
     \@@par 
     \group_begin:
+    \__texhigh_init:
     \__texhigh_env_init:
-    \tl_set:Nn \l__texhigh_command_tl { high }
     \keys_set:nn { texhigh/high } {#1}
     \__texhigh_options:
+    \__texhigh_input_init:
     \file_input:n {#2}
     \@@par
     \group_end:
   }
 \NewDocumentEnvironment{texhigh}{+O{}}
   { 
-    \@@par \__texhigh_env_init: 
-    \tl_set:Nn \l__texhigh_command_tl { high }
+    \@@par \__texhigh_init: \__texhigh_env_init: 
     \keys_set:nn { texhigh/high } {#1} 
     \group_begin: \__texhigh_verb_start:n \l__texhigh_fn_tl 
   }
-  { 
+  {
     \__texhigh_verb_end: \group_end:
-    \__texhigh_options: \__texhigh_get_last: \@@par 
+    \__texhigh_options:
+    \__texhigh_input_init:
+    \__texhigh_get_last: \@@par 
   }
 
+\cs_new_protected:Npn \__texhigh_init:
+  {
+    \tl_set:Nn \l__texhigh_command_tl { high }
+  }
+\cs_new:Npn \__texhigh_save_catcode:N #1
+  {
+    \tl_put_right:Ne \@texhigh@reset@ctab
+      { \catcode` \exp_not:N #1=\the\catcode`#1\relax }
+  }
 \cs_new_protected:Npn \__texhigh_env_init:
   {
     \sloppy \hbadness\@M
     \dim_set:Nn \parindent { 0pt }
     \linespread{1} \selectfont
+  }
+\cs_new_protected:Npn \__texhigh_input_init:
+  {
+    \char_set_catcode_space:N \ %
+    \char_set_catcode_math_superscript:N \^ %
+    \char_set_catcode_other:N \" %
   }
 \cs_new_protected:Npn \__texhigh_get_text:e #1
   {

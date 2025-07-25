@@ -46,6 +46,22 @@
 \texhighsetclassfallback{cs}{symbol}{tex, latex}
 \texhighsetclassfallback{rs}{math.inline}{math}
 \texhighsetclassfallback{re}{math.inline}{math}
+\texhighsetclassfallback{rs}{argument.m}{argument}
+\texhighsetclassfallback{rs}{argument.o}{argument.d, argument}
+\texhighsetclassfallback{rs}{argument.O}{argument.d, argument}
+\texhighsetclassfallback{rs}{argument.d}{argument}
+\texhighsetclassfallback{rs}{argument.D}{argument.d, argument}
+\texhighsetclassfallback{rs}{argument.r}{argument.m, argument}
+\texhighsetclassfallback{rs}{argument.R}{argument.m, argument}
+\texhighsetclassfallback{rs}{argument.s}{argument.t, argument}
+\texhighsetclassfallback{rs}{argument.t}{argument}
+\texhighsetclassfallback{rs}{argument.v}{argument}
+\texhighsetclassfallback{rs}{argument.l}{argument}
+\texhighsetclassfallback{rs}{argument.g}{argument.d, argument}
+\texhighsetclassfallback{rs}{argument.G}{argument.d, argument}
+\texhighsetclassfallback{rs}{argument.u}{argument}
+\texhighsetclassfallback{rs}{argument.U}{argument.u, argument}
+\texhighsetclassfallback{rs}{argument.^^J}{argument.u, argument}
 
 \@ifpackageloaded{xcolor}{}{\RequirePackage{xcolor}}
 \RequirePackage{ninecolors}
