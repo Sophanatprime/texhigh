@@ -4,6 +4,11 @@ Example of using `texhigh`.
 
 Install [texhigh](https://github.com/Sophanatprime/texhigh-rs/releases) and make sure TeX can find `texhigh.sty` and `texhigh.prelude.ths`, then run
 ```
+# you need build font database before building example.
+# it will build database by itself,
+# but you will get an error when you first build the example.
+texhigh font build 
+mkdir ./texhigh-cache
 xelatex --shell-escape example
 ```
 or

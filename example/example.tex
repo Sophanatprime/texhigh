@@ -2,16 +2,18 @@
 % !TEX options=-synctex=1 -shell-escape -interaction=nonstopmode -file-line-error "%DOC%"
 \documentclass[zihao=-4,fontset=fandol]{ctexart}
 \usepackage[hmargin=2cm,vmargin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{hologo}
 \usepackage[many]{tcolorbox}
 \usepackage[color,tikz]{texhigh}
 \usepackage[colorlinks]{hyperref}
 \ifdefined\xeCJKsetup
   \SetKeys[texhigh/high]{
-    font=\ttfamily\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}
+    font=\ttfamily\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}\raggedright,
   }
 \else
   \SetKeys[texhigh/high]{
-    font=\ttfamily
+    font=\ttfamily\raggedright,
   }
 \fi
 \newfontfamily\emojifont{Noto Emoji}
@@ -41,6 +43,10 @@
   breakable,
   #1
 }
+\ProvideDocumentCommand{\cs}{m}{\texttt{\textbackslash\detokenize{#1}}}
+\ProvideDocumentCommand{\meta}{m}{\ensuremath\langle\textit{#1}\ensuremath\rangle}
+\ProvideDocumentCommand{\oarg}{m}{\texttt[\meta{#1}\texttt]}
+\ProvideDocumentCommand{\marg}{m}{\texttt\{\meta{#1}\texttt\}}
 \begin{document}
 
 \title{高亮 \TeX 和 \LaTeX3 代码——使用\textsf{texhigh} 宏包}
@@ -346,6 +352,21 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
   ] {Emoji: 🐀🐃🐅🐇🐉🐍🐎🐐🐒🐓🐕🐖}
 \end{examcode}
 
+可以使用 \texttt{line-number} 选项来为代码加上行号，\texttt{first-line-number} 可以设置起始行号。
+\begin{examcode}{}
+\begin{texhigh}[gobble=auto, line-number, first-line-number=42,
+  line-number-format={\color[gray]{0.5}\scriptsize\sffamily #1},
+  left-space=5mm, right-space=5mm,
+]
+  \documentclass{article}
+  \usepackage[paper=a4,hmargin=2cm]{geometry} % 页面设置
+  \usepackage{fancyhdr} % 页眉
+  \begin{document}
+    Hello, \LaTeXe.
+  \end{document}
+\end{texhigh}
+\end{examcode}
+
 \textsf{texhigh} 支持与 \textsf{listings} 和 \textsf{minted} 类似的在高亮时让某些记号保持其原有作用的特性。
 \begin{examcode}{}
 \begin{texhigh}[texcl, escape-inside=||, escape-inside=\ES, gobble=auto]
@@ -355,20 +376,123 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
 \end{texhigh}
 \end{examcode}
 
+\begin{examcode}{}
+\begin{texhigh}[gobble=auto, texcl, math-escape, % 允许输出行内公式
+  linenos, first-line-number=1, % texhigh 不会自动重设行号
+  left-space=5mm, line-number-pos=left, % 行号位置：left, right, both
+]
+  A expression $\displaystyle\int\sin x\mathrm{d}x=-\cos x+C$.
+  Another equation \(\sum\limits_{n=0}^{+\infty}\dfrac{1}{n^2}=\dfrac{\pi^2}{6}\).
+  % The text \emph{will} be printed, so is the $E^2=(pc)^2+(m_0c^2)^2$ formula.
+\end{texhigh}
+\end{examcode}
+
 事实上，它们有更通用的写法：
 \begin{examcode}{}
 \DeclareDocumentCommand\cs{O{\texttt}m}
   {#1{\textbackslash\detokenize{#2}}}
 \DeclareDocumentCommand\pkg{m}{\textsf{#1}}
 \begin{texhigh}[gobble=auto,
-  % start 用于标记何时开始，为 TeX 正则表达式或纯文本正则表达式或纯文本
+  % start 用于标记何时开始，为 TeX 正则表达式或纯文本正则表达式或纯文本，
+  % 使用正则表达式时一定要注意带着开始锚点（^）！
   % arguments 用于指示它获取的参数，像 ltcmd（xparse）定义命令时使用的一样
-  % in-comments 用于表示它是否需处于注释内
+  % in-comments 用于表示它是否需处于注释内，有三个可选值：must、never、any
   range={cs}{escape, start=^\c{cs}, arguments=om, in-comments},
   range={pkg}{escape, start=^\c{pkg}, arguments=m},
 ]
   % The \cs{c_true_bool} is true in \pkg{l3bool}.
   The \cs{c_false_bool} is false in \pkg{l3bool}.
+\end{texhigh}
+\end{examcode}
+
+\cs{THSetRange} 可以用来设置代码段（range）的格式。用法如下：
+
+\noindent
+\fbox{\cs{THSetRange}\marg{range id}\oarg{range settings}\marg{begin code}\oarg{end code}}
+
+当不给出 \meta{range settings} 时，只会修改样式，而不会捕获代码段。
+
+\begin{examcode}{}
+\THSetRange{usepackage}
+  [start=^\c{usepackage}, arguments=omo]
+  {\THSetRange{argument.o}{\THcolor{blue}}%
+    \THSetRange{argument.m}{\THcolor{cyan}\bfseries}}
+% \usepackage{hologo}
+% remove-start 用于移除 start 的内容，这里 start 捕获 \AMS，
+% 把 \AMS 移除，然后输出我们设置的内容，这里是 \hologo{AmS}
+\THSetRange{logo}[escape, start=^\c{AMS}, remove-start]{\hologo{AmS}}
+
+\begin{texhigh}[gobble=auto,]
+  \usepackage[width=210mm,height=297mm]{geometry}
+  \usepackage{amsmath,amsthm} % \AMS packages
+  \usepackage[xdvipdfmx]{color}[2025/06/01]
+\end{texhigh}
+\end{examcode}
+
+\texttt{arguments} 包括 \texttt{m o O d D r R s t v} 以及
+\texttt{l u g G}（其中 \texttt{u} 的定界符只能有一个记号，不像 \textsf{xparse} 那样支持多个记号作为定界符），
+暂不支持 \texttt{e E c b}，并且 \texttt{! + = >} 也是无效的。
+此外，还支持一个特殊的符号 \verb|^^J|，它用于捕获当前行剩下的内容，带一个参数，表示是否要求大括号成对存在。
+\begin{examcode}{}
+\THSetRange{special}
+  % \THmN 是一个特殊的标记命令，用来表示 ^^J。
+  % ^^J 的参数“1”表示大括号必须成对存在。
+  % 由于 ^^J 捕获了当前行的剩余的内容，这也包括换行，这会导致
+  % 换行出现在 range 内部，本例中问题不大，但某些自定义的 range 就不一定了
+  % insert-ending 用来把定界符（这里就是换行符）“返还”出来
+  [start=^\c{SP}, arguments=l m \THmN{1}, insert-ending]
+  {\THSetRange{argument.l}{\ensuremath{\lvert}}[\ensuremath{\rvert}]%
+    \THSetRange{argument.m}{\ensuremath{\langle}}[\ensuremath{\rangle}]%
+    \THSetRange{argument.^^J}{\ensuremath{\lVert}}[\ensuremath{\rVert}]}
+
+\begin{texhigh}[gobble=auto]
+  A \SP special {arguments} to the end.
+  Another \SP fancy {parameter} of the line.
+\end{texhigh}
+\end{examcode}
+
+我们可以自定义注释的显示方式，就是使用 \verb|^^J| 参数：
+\begin{examcode}{}
+\THSetRange{comment-1}
+  [start=\I^\%\s, arguments=\THmN{0}, insert-ending]
+  {\THcolor[gray]{0.5}\THSetPlainStyle{cs,color}}%
+  [{\color{yellow!70!green}\rmfamily\bfseries \dotfill SC.}]
+\THSetRange{comment-2}
+  [start=\I^\%e\ , escape, arguments=\THmN{1}, remove-start, use-argument, insert-ending]
+  {\THcolor{red}\normalfont \textbf{SP: }}
+\THSetRange{comment-3}
+  [start=\I^\%a, escape, arguments=m \THmN{1}, remove-start, insert-ending]
+  {\def\grab#1{{\rmfamily\bfseries #1:\ }\ignorespaces}%
+    \THcolor{purple}\sffamily \grab}
+\THSetRange{comment-4}
+  [start={\L//\THmS}, arguments=\THmN{0}, insert-ending]
+  {\THcolor{green!40!black}\textrm{C style comment: }}
+
+\begin{texhigh}[gobble=auto]
+  This is normal % comment(1).
+  This is %e Some comment 2.
+  %a{comment 3} is the line.
+  // This is comment 4.
+\end{texhigh}
+\end{examcode}
+
+由于 range 在捕获时不能嵌套捕获，使用自定义的注释会导致它内部无法捕获其它 range 了。
+一个解决办法是将此 range 设置为 \texttt{escape}，然后内部再使用 \cs{texhighverb}。
+\begin{examcode}{}
+\THSetRange{mycomment}
+  % 使用 insert-brace 会把所有参数放到一个大括号里，\THmS 表示空格
+  [start={\L//\THmS}, escape, arguments=\THmN{1}, remove-start, insert-brace, insert-ending]
+  {% \appendpercent “参数处理器”把 \THmP（即“%”）放到参数的前面
+    \def\appendpercent#1{\edef\ProcessedArgument{\THmP\unexpanded{#1}}}%
+    \DeclareDocumentCommand{\mycommentverb}{>{\appendpercent} v}
+      {\texhightext[remove-enabled-ranges={mycomment}]{#1}}%
+    % 如果是类别码为 14 且为是第一个“%”就换回 “//\THmS”
+    \def\firstComment#1{\if#1\THmP\relax //\THmS \def\firstComment{}\else #1\fi}%
+    \THSetClassCH[]{catcode.14}{\firstComment{#1}}%
+    \normalfont \mycommentverb}
+\begin{texhigh}[gobble=auto, escape-inside=||]
+  The |\LaTeX| % comment can be |\emph{highlighted}|.
+  // also can be |\emph{highlighted}|, but isn't |\LaTeX|.
 \end{texhigh}
 \end{examcode}
 
