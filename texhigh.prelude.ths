@@ -103,6 +103,8 @@
   \THSetClassRE{parameter}{\endgroup}%
   \THSetClassRS{math}{\begingroup\THcolor{cyan7}}%
   \THSetClassRE{math}{\endgroup}%
+  \THSetClassES{[]texcl}{\begingroup\@texhigh@reset@ctab\@texhigh@reset@font\ignorespaces}%
+  \THSetClassEE{[]texcl}{\endgroup}%
 }
 \THUseSavedStyle{basic}
 
