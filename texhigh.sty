@@ -526,6 +526,13 @@
       \clist_put_right:Nn \l__texhigh_remove_enabled_ranges_clist {#1} ,
     escape-inside  .code:n = \__texhigh_add_escape_inside:n {#1} ,
     math-escape .meta:n = { enabled-ranges+ = { +[$ $]escapemath, +[()]escapemath } } ,
+    comments-math-escape .code:n = 
+      {
+        \__texhigh_add_range:nn { [comments$ $]mathescape }
+          { escape, start=^\cM\$, arguments=u{\THmD}, in-comments }
+        \__texhigh_add_range:nn { [comments( )]mathescape }
+          { escape, start=^\c{\(}, arguments=u{\)}, in-comments }
+      },
     texcl      .bool_set:N = \l__texhigh_texcl_bool ,
     texcomments.bool_set:N = \l__texhigh_texcl_bool ,
     range          .code:n = \__texhigh_add_range:nn #1 ,
@@ -595,14 +602,16 @@
     \tl_if_eq:nnF {#2} { \THPASS } { \THSetCharReplacement {#1} {#2} }
   }
 
-\str_const:Ne \THmP { \c_percent_str }
+\str_const:Ne \THmB { \c_backslash_str }
+\str_const:Ne \THmC { \c_circumflex_str }
+\str_const:Ne \THmD { \c_dollar_str }
+\str_const:Ne \THmH { \c_hash_str }
 \str_const:Ne \THmN { \c_circumflex_str ^ J }
+\str_const:Ne \THmP { \c_percent_str }
 \str_const:Ne \THmR { \c_circumflex_str ^ M }
 \tl_const:Ne  \THmS { \char_generate:nn { 32 } { 12 } }
-\tl_const:ce { c__texhigh_normalize_ \cs_to_str:N \THmP } { \THmP }
-\tl_const:ce { c__texhigh_normalize_ \cs_to_str:N \THmN } { \THmN }
-\tl_const:ce { c__texhigh_normalize_ \cs_to_str:N \THmR } { \THmR }
-\tl_const:ce { c__texhigh_normalize_ \cs_to_str:N \THmS } { \THmS }
+\tl_map_inline:nn { \THmB \THmC \THmD \THmH \THmN \THmP \THmR \THmS }
+  { \tl_const:ce { c__texhigh_normalize_ \cs_to_str:N #1 } {#1}  }
 
 \tl_new:N \l__texhigh_normalize_tl
 \cs_new_protected:Npn \__texhigh_normalize_string:Nn #1#2
@@ -806,7 +815,7 @@
             \tl_put_right:Ne \l__texhigh_normalize_tl
               {
                 \cs_if_exist_use:cF { c__texhigh_normalize_ \exp_after:wN \cs_to_str:N ##1 }
-                  { \exp_after:wN \cs_to_str:N ##1 }
+                  { \exp_after:wN \token_to_str:N ##1 }
               }
           }
           {
