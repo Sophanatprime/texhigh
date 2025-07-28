@@ -835,7 +835,6 @@
               { \seq_put_right:Nn \l__texhigh_enabled_ranges_seq {##1} }
           }
       }
-    \seq_log:N \l__texhigh_enabled_ranges_seq
     \seq_if_empty:NF \l__texhigh_enabled_ranges_seq
       {
         \prop_put:Nee \l__texhigh_config_base_prop
@@ -1042,9 +1041,9 @@
         \c_space_tl 
       }
     \prop_map_tokens:Nn \l__texhigh_config_prop
-      { \__texhigh_two_args:nnn { --config ~ } }
+      { \__texhigh_two_args:nnn { --config } }
     \prop_map_tokens:Nn \l__texhigh_config_base_prop
-      { \__texhigh_two_args:nnn { --config-base64 ~ } }
+      { \__texhigh_two_args:nnn { --config-base64 } }
     \seq_if_empty:NF \l__texhigh_lexers_seq
       {
         --config-base64 \c_space_tl
