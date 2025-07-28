@@ -405,6 +405,8 @@
   }
 \tl_new:N \l__texhigh_char_replacements_tl
 \seq_new:N \l__texhigh_lexers_seq
+\prop_new:N \l__texhigh_config_prop
+\prop_new:N \l__texhigh_config_base_prop
 \seq_new:N \l__texhigh_enabled_ranges_seq
 \keys_define:nn { texhigh/high }
   {
@@ -425,8 +427,8 @@
     use-ctab .groups:n = command ,
     ctab-file .clist_set:N = \l__texhigh_ctab_file_clist ,
     ctab-file .groups:n = command ,
-    __config .clist_set:N = \l__texhigh_config_clist ,
-    __config_base .clist_set:N = \l__texhigh_config_base_clist ,
+    __config .code:n = \prop_put:Nnn \l__texhigh_config_prop #1 ,
+    __config_base .code:n = \prop_put:Nnn \l__texhigh_config_base_prop #1 ,
     config-file .clist_set:N = \l__texhigh_config_file_clist ,
     config-file .groups:n = command ,
     config-file+ .code:n = \clist_put_right:Nn \l__texhigh_config_file_clist {#1} ,
@@ -446,8 +448,10 @@
     output .groups:n = command ,
     no-configs .code:n =
       {
-        \clist_clear:N \l__texhigh_config_clist
-        \clist_clear:N \l__texhigh_config_base_clist
+        \prop_clear:N \l__texhigh_config_prop
+        \prop_clear:N \l__texhigh_config_base_prop
+        \clist_clear:N \l__texhigh_config_file_clist
+        \seq_clear:N \l__texhigh_enabled_ranges_seq
         \tl_clear:N \l__texhigh_char_replacements_tl
         \seq_clear:N \l__texhigh_lexers_seq
       } ,
@@ -497,7 +501,7 @@
     style .groups:n = format ,
     this-cs .code:n =
       {
-        \clist_put_right:Nn \l__texhigh_config_clist { { cs_categories.this ~ '.+' } }
+        \prop_put:Nnn \l__texhigh_config_prop { cs_categories.this } { '.+' }
         \THSetClassCS[]{this}{#1{{##1}{##2}}} % #1=tokens, ##1=escape char, ##2=cs name
       } ,
     this-cs .groups:n = format ,
@@ -528,12 +532,9 @@
   }
 \cs_new_protected:Npn \__texhigh_break_at:n #1
   {
-    \clist_put_right:Ne \l__texhigh_config_base_clist
-      { {
-        break_at \c_space_tl
-        \texhigh_base_encode:e
-          { [ \tl_map_function:nN {#1} \__texhigh_char_try_escape:N ] }
-      } }
+    \prop_put:Nee \l__texhigh_config_base_prop
+      { break_at }
+      { \texhigh_base_encode:e { [ \tl_map_function:nN {#1} \__texhigh_char_try_escape:N ] } }
   }
 \cs_new:Npn \__texhigh_char_try_escape:N #1
   {
@@ -546,17 +547,17 @@
     \str_if_eq:nnTF {#2} { auto }
       { \int_set:Nn \l__texhigh_tmp_int { -1 } }
       { \int_set:Nn \l__texhigh_tmp_int { #2 } }
-    \clist_put_right:Ne \l__texhigh_config_base_clist
-      { {
-        #1 \c_space_tl
-        ' 
-          \texhigh_base_encode:e 
-            {
-              \int_compare:nNnTF \l__texhigh_tmp_int < { 0 }
-                { 'auto' } { \int_use:N \l__texhigh_tmp_int }
-            }
+    \prop_put:Nee \l__texhigh_config_base_prop
+      {#1}
+      {
         '
-      } }
+        \texhigh_base_encode:e 
+          {
+            \int_compare:nNnTF \l__texhigh_tmp_int < { 0 }
+              { 'auto' } { \int_use:N \l__texhigh_tmp_int }
+          }
+        '
+      }
   }
 \cs_new_protected:Npn \__texhigh_set_lines:n #1
   {
@@ -564,15 +565,13 @@
     \tl_set:Nx \l__texhigh_tmpb_tl { \clist_item:nn {#1} { 2 } }
     \tl_if_empty:NT \l__texhigh_tmpb_tl
       { \tl_set_eq:NN \l__texhigh_tmpb_tl \l__texhigh_tmpa_tl }
-    \clist_put_right:Ne \l__texhigh_config_base_clist
+    \prop_put:Nee \l__texhigh_config_base_prop
+      { lines }
       {
-        {
-          lines \c_space_tl
-          ' 
-          \texhigh_base_encode:e
-            { [ \int_eval:n \l__texhigh_tmpa_tl , \int_eval:n \l__texhigh_tmpb_tl ] }
-          '
-        }
+        '
+        \texhigh_base_encode:e
+          { [ \int_eval:n \l__texhigh_tmpa_tl , \int_eval:n \l__texhigh_tmpb_tl ] }
+        '
       }
   }
 \cs_new_protected:Npn \__texhigh_add_char_replacements:n
@@ -627,16 +626,18 @@
   {
     \str_set:Nn \l__texhigh_tmp_str {#1}
     \__texhigh_normalize_string:Nn \l__texhigh_tmp_tl {#2}
-    \clist_put_right:Ne \l__texhigh_config_clist
-      { { char_categories.'''\l__texhigh_tmp_str''' \c_space_tl '\l__texhigh_tmp_tl' } }
+    \prop_put:Nee \l__texhigh_config_prop
+      { char_categories.'''\l__texhigh_tmp_str''' }
+      { '\l__texhigh_tmp_tl' }
     \tl_if_eq:nnF {#3} { \THPASS } { \THSetClassCH[]{ \l__texhigh_tmp_str }{#3} }
   }
 \cs_new_protected:Npn \__texhigh_add_cs_category:nnn #1#2#3
   {
     \str_set:Nn \l__texhigh_tmp_str {#1}
     \__texhigh_normalize_string:Nn \l__texhigh_tmp_tl {#2}
-    \clist_put_right:Ne \l__texhigh_config_clist
-      { { cs_categories.'''\l__texhigh_tmp_str''' \c_space_tl '\l__texhigh_tmp_tl' } }
+    \prop_put:Nee \l__texhigh_config_prop
+      { cs_categories.'''\l__texhigh_tmp_str''' }
+      { '\l__texhigh_tmp_tl' }
     \tl_if_eq:nnF {#3} { \THPASS } { \THSetClassCS[]{ \l__texhigh_tmp_str }{#3} }
   }
 \tl_new:N \l__texhigh_lexer_a_tl
@@ -705,15 +706,15 @@
     \tl_if_single_token:nTF {#1}
       {
         \seq_put_right:Ne \l__texhigh_enabled_ranges_seq { \l__texhigh_tmp_str }
-        \clist_put_right:Ne \l__texhigh_ranges_clist
-          { {
-            ranges.''' \l__texhigh_tmp_str ''' \c_space_tl
+        \prop_put:Nee \l__texhigh_ranges_prop
+          { ranges.'''\l__texhigh_tmp_str''' }
+          {
             \texhigh_base_encode:e 
               {
                 { start='^ \c_backslash_str c { \cs_to_str:N #1 }',
                   arguments='m', remove_start=true, use_argument=true }
               }
-          } }
+          }
       }
       {
         \tl_set:Ne \l__texhigh_tmpa_tl { \tl_item:nn {#1} { 1 } }
@@ -725,19 +726,19 @@
           {
             \__texhigh_normalize_range_arguments:N \l__texhigh_tmpb_tl
             \seq_put_right:Ne \l__texhigh_enabled_ranges_seq { \l__texhigh_tmp_str }
-            \clist_put_right:Ne \l__texhigh_ranges_clist
-              { {
-                ranges.''' \l__texhigh_tmp_str ''' \c_space_tl
+            \prop_put:Nee \l__texhigh_ranges_prop
+              { ranges.'''\l__texhigh_tmp_str''' }
+              {
                 \texhigh_base_encode:e
                   {
                     { start='\c_backslash_str L \l__texhigh_tmpa_tl', arguments='u{ \l__texhigh_tmpb_tl }',
                       remove_start=true, use_argument=true }
                   }
-              } }
+              }
           }
       }
   }
-\clist_new:N \l__texhigh_ranges_clist
+\prop_new:N \l__texhigh_ranges_prop
 \keys_define:nn { texhigh/__range }
   {
     escape .bool_set:N = \l__texhigh_range_escape_bool ,
@@ -773,9 +774,9 @@
     \keys_set:nn { texhigh/__range } {#2}
     \__texhigh_normalize_range_arguments:N \l__texhigh_range_arguments_tl
     \seq_put_right:Ne \l__texhigh_enabled_ranges_seq \l__texhigh_tmp_str
-    \clist_put_right:Ne \l__texhigh_ranges_clist
+    \prop_put:Nee \l__texhigh_ranges_prop
+      { ranges.'''\l__texhigh_tmp_str''' }
       {
-        ranges. ' \l__texhigh_tmp_str ' \c_space_tl
         \texhigh_base_encode:e
           {
             { start='\l__texhigh_range_start_tl', arguments='\l__texhigh_range_arguments_tl',
@@ -837,13 +838,12 @@
     \seq_log:N \l__texhigh_enabled_ranges_seq
     \seq_if_empty:NF \l__texhigh_enabled_ranges_seq
       {
-        \clist_put_right:Ne \l__texhigh_config_base_clist
-          { {
-            enabled_ranges \c_space_tl 
-            \texhigh_base_encode:e { \__texhigh_seq_to_str_vec:N \l__texhigh_enabled_ranges_seq }
-          } }
+        \prop_put:Nee \l__texhigh_config_base_prop
+          { enabled_ranges }
+          { \texhigh_base_encode:e { \__texhigh_seq_to_str_vec:N \l__texhigh_enabled_ranges_seq } }
       }
-    \clist_put_right:No \l__texhigh_config_base_clist \l__texhigh_ranges_clist
+    \prop_concat:NNN \l__texhigh_config_base_prop
+      \l__texhigh_config_base_prop \l__texhigh_ranges_prop
     \l__texhigh_font_tl
     \skip_add:Nn \leftskip { \l__texhigh_left_skip }
     \skip_add:Nn \rightskip { \l__texhigh_right_skip }
@@ -1041,18 +1041,10 @@
         \clist_use:Nn \l__texhigh_config_file_clist { ~ --config-file ~ }
         \c_space_tl 
       }
-    \clist_if_empty:NF \l__texhigh_config_clist
-      {
-        --config \c_space_tl
-        \clist_use:Nn \l__texhigh_config_clist { ~ --config ~ }
-        \c_space_tl
-      }
-    \clist_if_empty:NF \l__texhigh_config_base_clist
-      {
-        --config-base64 \c_space_tl
-        \clist_use:Nn \l__texhigh_config_base_clist { ~ --config-base64 ~ }
-        \c_space_tl
-      }
+    \prop_map_tokens:Nn \l__texhigh_config_prop
+      { \__texhigh_two_args:nnn { --config ~ } }
+    \prop_map_tokens:Nn \l__texhigh_config_base_prop
+      { \__texhigh_two_args:nnn { --config-base64 ~ } }
     \seq_if_empty:NF \l__texhigh_lexers_seq
       {
         --config-base64 \c_space_tl
@@ -1070,6 +1062,7 @@
     \tl_if_empty:NF \l__texhigh_output_tl
       { --output \c_space_tl \l__texhigh_output_tl \c_space_tl }
   }
+\cs_new:Npn \__texhigh_two_args:nnn #1#2#3 { #1~#2~#3~ }
 
 % use it locally!
 \cs_new_protected:Npn \__texhigh_no_cjk_specials: { }
