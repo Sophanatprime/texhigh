@@ -506,6 +506,54 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
 \end{texhigh}
 \end{examcode}
 
+这个例子展示了如何检测并替换命令中的 \texttt{@@} 符号。
+\begin{examcode}[texhigh options={use-ctab=latex3code}]{}
+\ExplSyntaxOn
+\tl_new:N \l__this_atat_tl
+\cs_new:Npn \__this_atat_format:w #1 > 
+  {
+    \tl_set:Nn \l__this_atat_tl {#1}
+    @@ = \l__this_atat_tl
+  }
+\cs_new:Npn \__this_atat_cs_internal:nn #1#2
+  {
+    \group_begin:
+    \str_set:Nn \l_tmpa_str {#2}
+    \tl_replace_once:Nee \l_tmpa_str
+      { \tl_to_str:n { _ @@ } } { _ _ \l__this_atat_tl }
+    \THcolor { purple } #1 \l_tmpa_str
+    \group_end:
+  }
+\cs_new:Npn \__this_atat_cs_public:nn #1#2
+  {
+    \group_begin:
+    \str_set:Nn \l_tmpa_str {#2}
+    \tl_replace_once:Nee \l_tmpa_str
+      { \tl_to_str:n { @@ } } { \l__this_atat_tl }
+    \THcolor { red } \bfseries #1 \l_tmpa_str
+    \group_end:
+  }
+\THSetRange * {change-at} % 带 * 的不会自动加上 \begingroup \endgroup
+  [start={\I^<@@=}, escape, arguments=u{>}, remove-start]
+  { \ensuremath{\langle} \__this_atat_format:w }
+  [ \ensuremath{\rangle} ]
+\THSetClassCS[]{atat-i}{ \__this_atat_cs_internal:nn {#1} {#2} }
+\THSetClassCS[]{atat-p}{ \__this_atat_cs_public:nn {#1} {#2} }
+\ExplSyntaxOff
+
+\begin{texhigh}[gobble=auto, use-ctab=latex3code,
+  cs-category*={atat-i}{_@@}{\THPASS}, % 注意要先匹配 _@@
+  cs-category*={atat-p}{@@}{\THPASS},  % 否则只会匹配到 @@
+]
+  <@@=mycs>
+  \tl_new:N \l_@@_code_tl
+  \cs_set:Npn \@@_code: { \scan_stop: \l_@@_code_tl }
+  <@@=yourcs>
+  \tl_new:N \l_@@_code_tl
+  \cs_set:Npn \@@_code: { \scan_stop: \l_@@_code_tl }
+\end{texhigh}
+\end{examcode}
+
 \textsf{texhigh} 默认的定义以及部分命令的用法可参考 \texttt{texhigh.prelude.ths} 文件。
 
 \small
@@ -521,7 +569,9 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
 
 \vspace{1cm}
 \noindent\texhighverb|%%%---- File: texhigh.prelude.ths ----%%%|
-\texhighfile[use-ctab=latexcode]{texhigh.prelude.ths}
+\IfFileExists{texhigh.prelude.ths.tex}
+  {\texhighfile[use-ctab=latexcode]{texhigh.prelude.ths.tex}}
+  {\texhighfile[use-ctab=latexcode]{texhigh.prelude.ths}}
 
 % \newpage
 % \newgeometry{hmargin=1cm, top=1.5cm, bottom=1.2cm}
