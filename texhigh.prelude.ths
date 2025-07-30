@@ -47,21 +47,37 @@
 \texhighsetclassfallback{rs}{math.inline}{math}
 \texhighsetclassfallback{re}{math.inline}{math}
 \texhighsetclassfallback{rs}{argument.m}{argument}
+\texhighsetclassfallback{re}{argument.m}{argument}
 \texhighsetclassfallback{rs}{argument.o}{argument.d, argument}
+\texhighsetclassfallback{re}{argument.o}{argument.d, argument}
 \texhighsetclassfallback{rs}{argument.O}{argument.d, argument}
+\texhighsetclassfallback{re}{argument.O}{argument.d, argument}
 \texhighsetclassfallback{rs}{argument.d}{argument}
+\texhighsetclassfallback{re}{argument.d}{argument}
 \texhighsetclassfallback{rs}{argument.D}{argument.d, argument}
+\texhighsetclassfallback{re}{argument.D}{argument.d, argument}
 \texhighsetclassfallback{rs}{argument.r}{argument.m, argument}
+\texhighsetclassfallback{re}{argument.r}{argument.m, argument}
 \texhighsetclassfallback{rs}{argument.R}{argument.m, argument}
+\texhighsetclassfallback{re}{argument.R}{argument.m, argument}
 \texhighsetclassfallback{rs}{argument.s}{argument.t, argument}
+\texhighsetclassfallback{re}{argument.s}{argument.t, argument}
 \texhighsetclassfallback{rs}{argument.t}{argument}
+\texhighsetclassfallback{re}{argument.t}{argument}
 \texhighsetclassfallback{rs}{argument.v}{argument}
+\texhighsetclassfallback{re}{argument.v}{argument}
 \texhighsetclassfallback{rs}{argument.l}{argument}
+\texhighsetclassfallback{re}{argument.l}{argument}
 \texhighsetclassfallback{rs}{argument.g}{argument.d, argument}
+\texhighsetclassfallback{re}{argument.g}{argument.d, argument}
 \texhighsetclassfallback{rs}{argument.G}{argument.d, argument}
+\texhighsetclassfallback{re}{argument.G}{argument.d, argument}
 \texhighsetclassfallback{rs}{argument.u}{argument}
+\texhighsetclassfallback{re}{argument.u}{argument}
 \texhighsetclassfallback{rs}{argument.U}{argument.u, argument}
+\texhighsetclassfallback{re}{argument.U}{argument.u, argument}
 \texhighsetclassfallback{rs}{argument.^^J}{argument.u, argument}
+\texhighsetclassfallback{re}{argument.^^J}{argument.u, argument}
 
 \@ifpackageloaded{xcolor}{}{\RequirePackage{xcolor}}
 \RequirePackage{ninecolors}

@@ -158,7 +158,7 @@
         \seq_concat:ccc { l__texhigh_#2/#3_seq } { l__texhigh_#2/#3_seq } { l__texhigh_tmp_seq }
       }
   }
-\def\texhigh@curr@name{basic}
+\def\texhigh@curr@name{}
 \protected\long\def\THSaveStyle #1 {
   \expandafter\relax\csname texhigh@savestyle\expanded{\endcsname{#1}}
 }
@@ -183,7 +183,7 @@
 \cs_new_protected:Npn \THSetPlainStyle #1
   {
     \str_if_eq:eeTF { #1 } { * }
-      { \clist_map_inline:nn { ls,le,bp,cs,ch,rs,re,st,es,ee,pn,color } }
+      { \clist_map_inline:nn { bp,cs,ch,rs,re,st,es,ee,pn,color } }
       { \clist_map_inline:nn {#1} }
         { \cs_set_eq:cc { TH ##1 } { TH ##1 Plain } }
   }
@@ -215,11 +215,13 @@
   {
     \seq_put_right:ce { texhigh@style-subcate/#1 } {#2}
   }
-\NewDocumentCommand \THRemoveClass { m !O{\texhigh@curr@name} }
+\NewDocumentCommand \THRemoveClasses { m !O{\texhigh@curr@name} }
   {
     \seq_map_inline:cn { texhigh@style-subcate/#1#2 }
       { \str_if_eq:eeF {##1} { ? } { \cs_set_eq:cN { TH@#1#2@##1 } \tex_undefined:D } }
   }
+\NewDocumentCommand \THRemoveClass { m O{\texhigh@curr@name} m }
+  { \cs_set_eq:cN { TH@#1#2@#3 } \tex_undefined:D }
 \ExplSyntaxOff
 
 \newcommand\THSetClassBP[3][\texhigh@curr@name]{\@texhigh@push{bp#1}{#2}\@namedef{TH@bp#1@#2}{#3}}
@@ -396,12 +398,18 @@
     \@esphack
   }
 
-\cs_new_protected:Npn \texhighdefstyle #1#2
-  { \keys_define:nn { texhigh } { #1 .meta:nn = { texhigh } {#2} } }
+\NewDocumentCommand \texhighdefstyle { o m +m }
+  {
+    \tl_if_novalue:nTF {#1}
+      { \keys_define:nn { texhigh } { #2 .meta:nn = { texhigh } {#3} } }
+      { \keys_define:nn { texhigh/#1 } { #2 .meta:nn = { texhigh/#1 } {#3} } }
+  }
 \keys_define:nn { texhigh } 
   {
     cache-dir  .tl_set:N = \l__texhigh_cache_dir_tl,
     cache-dir .initial:n = ./ ,
+    high .meta:nn = { texhigh/high } {#1} ,
+    layout .meta:nn = { texhigh/layout } {#1} ,
   }
 \tl_new:N \l__texhigh_char_replacements_tl
 \seq_new:N \l__texhigh_lexers_seq
@@ -452,6 +460,7 @@
         \prop_clear:N \l__texhigh_config_base_prop
         \clist_clear:N \l__texhigh_config_file_clist
         \seq_clear:N \l__texhigh_enabled_ranges_seq
+        \prop_clear:N \l__texhigh_ranges_prop
         \tl_clear:N \l__texhigh_char_replacements_tl
         \seq_clear:N \l__texhigh_lexers_seq
       } ,
@@ -463,6 +472,7 @@
     cache-dir .tl_set:N = \l__texhigh_cache_dir_tl ,
     text-base64 .bool_set:N = \l__texhigh_text_based_bool ,
     text-base64 .initial:n = true ,
+    kpse .bool_set:N = \l__texhigh_kpse_bool ,
 
     linenos .bool_set:N = \l__texhigh_line_number_bool ,
     line-number .bool_set:N = \l__texhigh_line_number_bool ,
@@ -1043,6 +1053,8 @@
         \clist_use:Nn \l__texhigh_ctab_file_clist { ~ --ctab-file ~ }
         \c_space_tl 
       }
+    \bool_if:NT \l__texhigh_kpse_bool
+      { --kpse-config-file \c_space_tl }
     \clist_if_empty:NF \l__texhigh_config_file_clist
       { 
         --config-file \c_space_tl 
