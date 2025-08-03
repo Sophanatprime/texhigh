@@ -1,4 +1,4 @@
-\ProvidesExplPackage{texhigh}{2024-07-28}{0.3.0}{highlight TeX string}
+\ProvidesExplPackage{texhigh}{2024-07-31}{0.3.1}{highlight TeX string}
 
 \cs_new_protected:Npn \texhigh_check_bin:TF #1#2
   {
@@ -244,16 +244,22 @@
 \newcommand\THLetClassPN[3][\texhigh@curr@name]{\@texhigh@push{pn#1}{#2}\TH@letcs{TH@pn#1@#2}{TH@pn#1@#3}}
 
 \ExplSyntaxOn
-\NewDocumentCommand\THSetRange{ m o +m !+O{} }{
-  \IfNoValueF{#2}{ \__texhigh_add_range:nn {#1} {#2} }
-  \tl_set:cn { __texhigh_range/#1~code~begin: } {#3}
-  \tl_set:cn { __texhigh_range/#1~code~end: } {#4}
+\NewDocumentCommand\THSetRange{ s m o +m !+O{} }{
+  \tl_if_novalue:nF {#3} { \__texhigh_add_range:nn {#2} {#3} }
+  \tl_set:cn { __texhigh_range/#2~code~begin: } {#4}
+  \tl_set:cn { __texhigh_range/#2~code~end: } {#5}
+  \bool_if:nF {#1}
+    {
+      \tl_put_left:cn { __texhigh_range/#2~code~begin: }
+        { \begingroup\@texhigh@reset@ctab }
+      \tl_put_right:cn { __texhigh_range/#2~code~end: } { \endgroup }
+    }
   \use:e 
     {
-      \exp_not:N \THSetClassRS[]{#1}{\begingroup \exp_not:c { __texhigh_range/#1~code~begin: } }
-      \exp_not:N \THSetClassRE[]{#1}{ \exp_not:c { __texhigh_range/#1~code~end: } \endgroup}
-      \exp_not:N \THSetClassES[]{#1}{\begingroup \exp_not:c { __texhigh_range/#1~code~begin: } }
-      \exp_not:N \THSetClassEE[]{#1}{ \exp_not:c { __texhigh_range/#1~code~end: } \endgroup}
+      \exp_not:N \THSetClassRS[]{#2}{ \exp_not:c { __texhigh_range/#2~code~begin: } }
+      \exp_not:N \THSetClassRE[]{#2}{ \exp_not:c { __texhigh_range/#2~code~end: } }
+      \exp_not:N \THSetClassES[]{#2}{ \exp_not:c { __texhigh_range/#2~code~begin: } }
+      \exp_not:N \THSetClassEE[]{#2}{ \exp_not:c { __texhigh_range/#2~code~end: } }
     }
 }
 \ExplSyntaxOff
