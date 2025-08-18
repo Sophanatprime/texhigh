@@ -629,8 +629,14 @@
 \tl_map_inline:nn { \THmB \THmC \THmD \THmH \THmN \THmP \THmR \THmS }
   { \tl_const:ce { c__texhigh_normalize_ \cs_to_str:N #1 } {#1}  }
 
-\cs_set:Npx \__texhigh_cmd_stringify:n #1
-  { \c_backslash_str ' '#1' \c_backslash_str ' }
+\sys_if_platform_windows:TF
+  {
+    \cs_set:Npn \__texhigh_cmd_stringify:n #1 { ''' #1 ''' }
+  }
+  {
+    \cs_set:Npx \__texhigh_cmd_stringify:n #1
+      { \c_backslash_str ' '#1' \c_backslash_str ' }
+  }
 \tl_new:N \l__texhigh_normalize_tl
 \cs_new_protected:Npn \__texhigh_normalize_string:Nn #1#2
   {
