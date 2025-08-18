@@ -6,6 +6,15 @@
 \usepackage{hologo}
 \usepackage[many]{tcolorbox}
 \usepackage[color,tikz]{texhigh}
+
+%% if WSL use host font (windows font), \kaomoji would be much slower,
+%% if not, just delete these lines.
+\csname file_if_exist:nT\endcsname {/mnt/c/Windows/Fonts/arial.ttf}{%
+  \wlog{I found the code is running on WSL, I will redefine \string\kaomoji.}
+  \NewCommandCopy\orikaomoji\kaomoji
+  \DeclareDocumentCommand\kaomoji{sO{}m}{\IfBooleanTF{#1}{\orikaomoji*[#2]{#3}}{\orikaomoji*[fontsize=50bp,#2]{#3}{\includegraphics[height=10bp]}}}
+}
+
 \usepackage[colorlinks]{hyperref}
 \ifdefined\xeCJKsetup
   \SetKeys[texhigh/high]{
@@ -51,15 +60,16 @@
 
 \title{高亮 \TeX 和 \LaTeX3 代码——使用\textsf{texhigh} 宏包}
 \author{雾月\thanks{longaster@163.com}}
+\date{\today\quad v0.3.2}
 \maketitle
 
 \textsf{texhigh} 宏包\footnote{\url{https://github.com/Sophanatprime/texhigh}}%
 是专用来高亮 \TeX 文件的宏包。基于由 Rust 编写的命令行工具
 texhigh\footnote{\url{https://github.com/Sophanatprime/texhigh-rs}}，
-处理 1.24MB 左右（37,700 余行）的 \texttt{expl3-code.tex} 只需 0.15s 左右
+处理 1.29MB 左右（39,300 余行）的 \texttt{expl3-code.tex} 只需 0.18s 左右
 （操作系统为 Windows，CPU 为 i7-12700H），
-处理速度约为 \textsf{minted} 宏包使用的 pygmentize（约 2.75s）的 18 倍，
-texhigh 的增强模式也比它快 10 到 16 倍（约 0.165s）。
+处理速度约为 \textsf{minted} 宏包使用的 pygmentize（约 3.4s）的 19 倍，
+texhigh 的增强模式也比它快 10 到 16 倍（约 0.21s）。
 对于普通大小的 \TeX 代码，处理它们所需的时间相比于 \TeX 文件本身编译所需的时间，
 已经可以忽略不记。
 
@@ -380,6 +390,9 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
 \begin{texhigh}[gobble=auto, texcl, math-escape, % 允许输出行内公式
   linenos, first-line-number=1, % texhigh 不会自动重设行号
   left-space=5mm, line-number-pos=left, % 行号位置：left, right, both
+  line-number-space=2mm, % 修改行号与代码的间距
+  line-number-format={\small\color{red}[#1]}, % 修改样式，#1 参数为行号
+  the-line-number=\Alph{TeXHighLine}, % 修改 \theTeXHighLine
 ]
   A expression $\displaystyle\int\sin x\mathrm{d}x=-\cos x+C$.
   Another equation \(\sum\limits_{n=0}^{+\infty}\dfrac{1}{n^2}=\dfrac{\pi^2}{6}\).
@@ -439,8 +452,7 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
 \end{texhigh}
 \end{examcode}
 
-\texttt{arguments} 包括 \texttt{m o O d D r R s t v} 以及
-\texttt{l u g G}（其中 \texttt{u} 的定界符只能有一个记号，不像 \textsf{xparse} 那样支持多个记号作为定界符），
+\texttt{arguments} 包括 \texttt{m o O d D r R s t v} 以及 \texttt{l u g G}
 暂不支持 \texttt{e E c b}，并且 \texttt{! + = >} 也是无效的。
 此外，还支持一个特殊的符号 \verb|^^J|，它用于捕获当前行剩下的内容，带一个参数，表示是否要求大括号成对存在。
 \begin{examcode}{}
@@ -458,6 +470,42 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
 \begin{texhigh}[gobble=auto]
   A \SP special {arguments} to the end.
   Another \SP fancy {parameter} of the line.
+\end{texhigh}
+\end{examcode}
+
+我们可以捕获各类括号和单词等：
+\begin{examcode}[texhigh options={use-ctab=latexcode, break-at={\ ,\|}}]{}
+% 注意正则表达式要转义括号，start-is-arg 会把 start 也看做是参数的一部分
+\THSetRange{bracket}[start={^\[}, arguments={r[]}, start-is-arg]
+  {% 可进一步处理 [ 和 ]
+    \THcolor[HTML]{007f00}}
+\THSetRange{paren}[start={^\(}, arguments={r()}, start-is-arg]{\THcolor[HTML]{7f007f}}
+% \THSetRange{brace}[start={^\{}, arguments={m}, start-is-arg]{\THcolor{purple}\bfseries}
+\THSetRange{tikz-keywords}
+  [start={\I^(tikzpicture|pic|controls|and)},]
+  {\bfseries}
+\makeatletter
+% 定义一个样式，range-config 就是 \THSetRange 的第二个参数的键所属的路径
+\texhighdefstyle[range-config]{tikz-keyword}
+  % 使用 insert-brace 会把所有参数放到一个大括号里
+  % 使用 u 参数捕获 #1，然后把它放到括号里
+  {escape, start={\L#1}, arguments=u{#1}, start-is-arg, insert-brace}
+\THSetRange{[cycle]tikz-keywords}
+  [tikz-keyword=cycle]
+  % 最终得到 \bfseries \texhigh@underline{cycle}
+  {\bfseries \texhigh@underline}
+\THSetRange{[node]tikz-keywords}[tikz-keyword=node]{\bfseries\texhigh@underline}
+\makeatother
+\THSetClassCS[]{tikzcs}{\mbox{\THcolor{blue}\bfseries #1#2}}
+
+\begin{texhigh}[gobble=auto,
+  cs-category={tikzcs}{draw,fill,filldraw,path,node,coordinate}{\THPASS},
+]
+  \begin{tikzpicture}[scale=2]
+    \draw[red] (0,0) -- +(1,1);
+    \path[fill] (2,1) -- (2,2) -- (0,1) -- cycle;
+    \draw (0,0) .. controls (1,1) and (2,1) .. (2,0) node {$A$};
+  \end{tikzpicture}
 \end{texhigh}
 \end{examcode}
 
@@ -490,7 +538,7 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
 一个解决办法是将此 range 设置为 \texttt{escape}，然后内部再使用 \cs{texhighverb}。
 \begin{examcode}{}
 \THSetRange{mycomment}
-  % 使用 insert-brace 会把所有参数放到一个大括号里，\THmS 表示空格
+  % \THmS 表示空格
   [start={\L//\THmS}, escape, arguments=\THmN{1}, remove-start, insert-brace, insert-ending]
   {% \appendpercent “参数处理器”把 \THmP（即“%”）放到参数的前面
     \def\appendpercent#1{\edef\ProcessedArgument{\THmP\unexpanded{#1}}}%

@@ -20,7 +20,7 @@ lualatex --shell-escape example
 
 Install [texhigh](https://github.com/Sophanatprime/texhigh-rs/releases) and make sure TeX can find `texhigh.sty` and `texhigh.prelude.ths`.
 
-Put `source3.texhigh.toml` and the modified `l3doc.cls` in the directory of the source code of `source3` (including `source3.tex`, `source3body.tex` and all `l3*.dtx`s, you will not need to copy these files by setting environment variable `TEXINPUTS` to `;$TEXMF/doc/latex/l3kernel//;$TEXMF/source/latex/l3kernel//`), then run
+Put `source3.texhigh.toml` and the modified `l3doc.cls` in the directory of the source code of `source3` (including `source3.tex`, `source3body.tex` and all `l3*.dtx`s, you will not need to copy these files by setting environment variable `TEXINPUTS` to `;$TEXMF/doc/latex/l3kernel//;$TEXMF/source/latex/l3kernel//`, if on unix, replace `;` to `:`), then run
 ```
 xelatex/lualatex --shell-escape source3.tex
 makeindex -s gind.ist -o source3.ind source3.idx
