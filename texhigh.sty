@@ -1,4 +1,4 @@
-\ProvidesExplPackage{texhigh}{2024-07-31}{0.3.1}{highlight TeX string}
+\ProvidesExplPackage{texhigh}{2024-08-18}{0.3.1}{highlight TeX string}
 
 \cs_new_protected:Npn \texhigh_check_bin:TF #1#2
   {
@@ -629,6 +629,8 @@
 \tl_map_inline:nn { \THmB \THmC \THmD \THmH \THmN \THmP \THmR \THmS }
   { \tl_const:ce { c__texhigh_normalize_ \cs_to_str:N #1 } {#1}  }
 
+\cs_set:Npx \__texhigh_cmd_stringify:n #1
+  { \c_backslash_str ' '#1' \c_backslash_str ' }
 \tl_new:N \l__texhigh_normalize_tl
 \cs_new_protected:Npn \__texhigh_normalize_string:Nn #1#2
   {
@@ -652,7 +654,7 @@
     \str_set:Nn \l__texhigh_tmp_str {#1}
     \__texhigh_normalize_string:Nn \l__texhigh_tmp_tl {#2}
     \prop_put:Nee \l__texhigh_config_prop
-      { char_categories.'''\l__texhigh_tmp_str''' }
+      { char_categories. \__texhigh_cmd_stringify:n \l__texhigh_tmp_str }
       { '\l__texhigh_tmp_tl' }
     \tl_if_eq:nnF {#3} { \THPASS } { \THSetClassCH[]{ \l__texhigh_tmp_str }{#3} }
   }
@@ -661,7 +663,7 @@
     \str_set:Nn \l__texhigh_tmp_str {#1}
     \__texhigh_normalize_string:Nn \l__texhigh_tmp_tl {#2}
     \prop_put:Nee \l__texhigh_config_prop
-      { cs_categories.'''\l__texhigh_tmp_str''' }
+      { cs_categories. \__texhigh_cmd_stringify:n \l__texhigh_tmp_str }
       { '\l__texhigh_tmp_tl' }
     \tl_if_eq:nnF {#3} { \THPASS } { \THSetClassCS[]{ \l__texhigh_tmp_str }{#3} }
   }
@@ -732,7 +734,7 @@
       {
         \seq_put_right:Ne \l__texhigh_enabled_ranges_seq { \l__texhigh_tmp_str }
         \prop_put:Nee \l__texhigh_ranges_prop
-          { ranges.'''\l__texhigh_tmp_str''' }
+          { ranges. \__texhigh_cmd_stringify:n \l__texhigh_tmp_str }
           {
             \texhigh_base_encode:e 
               {
@@ -752,7 +754,7 @@
             \__texhigh_normalize_range_arguments:N \l__texhigh_tmpb_tl
             \seq_put_right:Ne \l__texhigh_enabled_ranges_seq { \l__texhigh_tmp_str }
             \prop_put:Nee \l__texhigh_ranges_prop
-              { ranges.'''\l__texhigh_tmp_str''' }
+              { ranges. \__texhigh_cmd_stringify:n \l__texhigh_tmp_str }
               {
                 \texhigh_base_encode:e
                   {
@@ -800,7 +802,7 @@
     \__texhigh_normalize_range_arguments:N \l__texhigh_range_arguments_tl
     \seq_put_right:Ne \l__texhigh_enabled_ranges_seq \l__texhigh_tmp_str
     \prop_put:Nee \l__texhigh_ranges_prop
-      { ranges.'''\l__texhigh_tmp_str''' }
+      { ranges. \__texhigh_cmd_stringify:n \l__texhigh_tmp_str }
       {
         \texhigh_base_encode:e
           {
