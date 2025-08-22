@@ -7,14 +7,6 @@
 \usepackage[many]{tcolorbox}
 \usepackage[color,tikz]{texhigh}
 
-%% if WSL use host font (windows font), \kaomoji would be much slower,
-%% if not, just delete these lines.
-\csname file_if_exist:nT\endcsname {/mnt/c/Windows/Fonts/arial.ttf}{%
-  \wlog{I found the code is running on WSL, I will redefine \string\kaomoji.}
-  \NewCommandCopy\orikaomoji\kaomoji
-  \DeclareDocumentCommand\kaomoji{sO{}m}{\IfBooleanTF{#1}{\orikaomoji*[#2]{#3}}{\orikaomoji*[fontsize=50bp,#2]{#3}{\includegraphics[height=10bp]}}}
-}
-
 \usepackage[colorlinks]{hyperref}
 \ifdefined\xeCJKsetup
   \SetKeys[texhigh/high]{
@@ -56,11 +48,25 @@
 \ProvideDocumentCommand{\meta}{m}{\ensuremath\langle\textit{#1}\ensuremath\rangle}
 \ProvideDocumentCommand{\oarg}{m}{\texttt[\meta{#1}\texttt]}
 \ProvideDocumentCommand{\marg}{m}{\texttt\{\meta{#1}\texttt\}}
+\newcommand\boxdes[1]{\par\noindent {\fboxsep1mm \fbox{#1}}}
+\ExplSyntaxOn
+\NewDocumentCommand\prolist{ O{，} O{\texttt} m }
+  {
+    \group_begin:
+    \seq_set_from_clist:Nn \l_tmpa_seq {#3}
+    \seq_pop_left:NNT \l_tmpa_seq \l_tmpa_tl
+      {
+        #2{ \l_tmpa_tl }
+        \seq_map_inline:Nn \l_tmpa_seq { #1 #2{##1} }
+      }
+    \group_end:
+  }
+\ExplSyntaxOff
 \begin{document}
 
 \title{高亮 \TeX 和 \LaTeX3 代码——使用\textsf{texhigh} 宏包}
 \author{雾月\thanks{longaster@163.com}}
-\date{\today\quad v0.3.2}
+\date{\today\quad v0.3.3}
 \maketitle
 
 \textsf{texhigh} 宏包\footnote{\url{https://github.com/Sophanatprime/texhigh}}%
@@ -430,8 +436,7 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
 
 \cs{THSetRange} 可以用来设置代码段（range）的格式。用法如下：
 
-\noindent
-\fbox{\cs{THSetRange}\marg{range id}\oarg{range settings}\marg{begin code}\oarg{end code}}
+\boxdes{\cs{THSetRange}\marg{range id}\oarg{range settings}\marg{begin code}\oarg{end code}}
 
 当不给出 \meta{range settings} 时，只会修改样式，而不会捕获代码段。
 
@@ -600,6 +605,106 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
   \tl_new:N \l_@@_code_tl
   \cs_set:Npn \@@_code: { \scan_stop: \l_@@_code_tl }
 \end{texhigh}
+\end{examcode}
+
+\cs{THSetRange} 的 \texttt{start*} 还支持嵌套，就是在 \texttt{start*} 中使用 \texttt{start}/\texttt{start*}。
+实际上，当外层的 \texttt{start}/\texttt{start*} 匹配成功后，就会立刻停止，
+如果它的 \texttt{arguments} 无法匹配，那么这个匹配就是无效的，即使之后某些的 \texttt{start} 可以匹配成功，texhigh 也不会进行后续的匹配了。
+
+但如果在 \texttt{start}/\texttt{start*} 中再使用 \texttt{start}/\texttt{start*} 和 \texttt{arguments}，
+假定内层的没有匹配成功或者无效，texhigh 会跳过这个，再继续寻找后面的 \texttt{start}。
+也就是说，如果 \meta{inner arguments} 和 \meta{arguments} 相同，那么匹配尽管不一定成功，但总是有效的。
+\begin{examcode}{}
+\THSetRange{sentence}
+  [start*={ start='\I^\w', arguments='u{.}', start_is_arg=true }, arguments={u{.}}, start-is-arg]
+  {\THcolor{red}}
+\THSetRange{half}
+  [start*={ start='\I^\w', arguments='u{,}', start_is_arg=true }, arguments={u{,}}, start-is-arg]
+  {\THcolor{blue}}
+\THSetRange{neither}
+  [start*={ start='\I^\w', arguments='\THmN{f}' }, arguments={\THmN{0}}, start-is-arg]
+  {\THcolor{green!50!black}}[!]
+
+\texhighverb{a text without period}  \texhighverb{a text without comma}
+
+\texhighverb{a text with period.}    \texhighverb{a text with comma,}
+\end{examcode}
+
+这个例子中 \texttt{start} 都是纯文本正则表达式 \verb|\I^\w|，真正起作用的是它们使用的不同的参数，texhigh 首先检测是否匹配 \texttt{sentence} 的 \texttt{start} 和 \texttt{arguments}，然后检测 \texttt{half}，然后 \texttt{neither}。
+
+再观察下面这个例子，没有内层的 \texttt{start}，由于最开始的 \texttt{sentence} 能够匹配，尽管其参数可能无效，texhigh 也不会再检测 \texttt{half} 和 \texttt{neither} 了。
+\begin{examcode}{}
+\THSetRange{sentence}
+  [start=\I^\w, arguments={u{.}}, start-is-arg]
+  {\THcolor{red}}
+\THSetRange{half}
+  [start=\I^\w, arguments={u{,}}, start-is-arg]
+  {\THcolor{blue}}
+\THSetRange{neither}
+  [start=\I^\w, arguments={\THmN{0}}, start-is-arg]
+  {\THcolor{green!50!black}}[!]
+
+% 由于 arguments 匹配失败，texhigh 会报警告
+\texhighverb{a text without period}  \texhighverb{a text without comma}
+
+\texhighverb{a text with period.}    \texhighverb{a text with comma,}
+\end{examcode}
+
+不过要注意的是 \texttt{start*} 不能随意添加逗号，且每个参数都不能少，\texttt{start*} 和 \texttt{arguments} 的参数的单引号也不能少。\texttt{start*} 有如下的几个情形，必须严格按照给出的用法来写：
+
+{\lineskip=5pt \lineskiplimit\baselineskip
+\boxdes{\texttt{start*=}\texttt\{ \texttt{start='}\meta{start}\texttt{',} \texttt{arguments='}\meta{arguments}\texttt{',} \texttt{start\_is\_arg}=\meta{bool} \texttt\}}
+
+\boxdes{\texttt{start*=}\texttt\{ \texttt{start=}\texttt\{\meta{start*}\texttt\}\texttt, \texttt{arguments='}\meta{arguments}\texttt{',} \texttt{start\_is\_arg}=\meta{bool} \texttt\}}
+
+\boxdes{\texttt{start*=}\texttt\{ \texttt{literal='}\meta{literal}\texttt{'} \texttt\}}
+相当于 \texttt{start=}\texttt\{\verb|\L|\meta{literal}\texttt\}
+
+\boxdes{\texttt{start*=}\texttt\{ \texttt{regex='}\meta{regex}\texttt{'} \texttt\}}
+相当于 \texttt{start=}\texttt\{\verb|\I|\meta{regex}\texttt\}
+
+\boxdes{\texttt{start*=}\texttt\{ \texttt{regtex='}\meta{regtex}\texttt{'} \texttt\}}
+相当于 \texttt{start=}\texttt\{\verb|\T|\meta{regtex}\texttt\}
+\par
+}
+
+\textsf{texhigh} 还能捕获某个 range 的内容，就是用 \verb|\THCollectRange|，用法如下：
+
+\boxdes{\cs{THCollectRange}\marg{do code} \cs{THrs}\marg{range id}\texttt{...}\cs{THre}\marg{range id}}
+
+\boxdes{\cs{THCollectRange}\marg{do code} \cs{THes}\marg{escape id}\texttt{...}\cs{THee}\marg{escape id}}
+
+其中 \meta{do code} 可以使用 3 个参数，第一个为 range/escape 的 id，第二个为 range/escape 的内容，第三个为 range/escape 的原始内容。
+
+\begin{examcode}{}
+\THSetRange{keyword}
+  % 由于 texhigh 的实现方式所致，如果 \b 断言出现在最开始的位置，则无法生效，
+  % 需要使用 skip-if-pre 来跳过无效的匹配，如果 skip-if-pre 或 skip-if-post 
+  % 有一个匹配成功的话，就会跳过该 range，texhigh 会继续找可能的匹配。
+  % skip-if-pre 检查 start 之前的内容，skip-if-post 检查 start 之后的内容，
+  % 它们都是纯文本正则表达式。
+  [start*={ regex='^\b(and|or|not)\b'}, in-comments=never, skip-if-pre=\w$ ]
+  {\THCollectRange{(styled: {\color{red}#3}, text: \detokenize{#2})%
+      % 与 \THrs{keyword} 配对的 \THre{keyword} 会被移除，需要补回来，
+      \THre{keyword}}%
+      % 当代码执行到此处时，原来的 \THrs{keyword} 已经被执行了，需要补充回来
+      % 而 \THre{keyword} 还留在后边，可以正确捕获，成功后它也会被移除
+    \THrs{keyword}%
+  }
+
+\texhighverb{and} \texhighverb{rand} \texhighverb{android}
+\texhighverb{not} \texhighverb{cannot} \texhighverb{or} \texhighverb{nor}
+\end{examcode}
+
+有时我们不需要预定义的样式而只使用自己的样式，\textsf{texhigh} 提供了 \cs{THRemoveClass} 和 \cs{THRemoveClasses} 这两个命令。可用的类型为 \prolist{bp, cs, ch, rs, re, st, es, ee, pn}。
+\begin{examcode}{}
+\texhighverb{\makebox[\dimeval{5pt+5pt}]{\hbox{\LaTeX}}}
+
+{\THRemoveClass{cs}{latex.document}% 删除控制序列类型中类别为 latex.document 的样式
+\texhighverb{\makebox[\dimeval{5pt+5pt}]{\hbox{\LaTeX}}}}
+
+{\THRemoveClasses{cs}% 删除控制序列类型中除默认样式之外的所有样式，默认样式名为“?”，可用 \THRemoveClass{cs}{?} 强制删除。
+\texhighverb{\makebox[\dimeval{5pt+5pt}]{\hbox{\LaTeX}}}}
 \end{examcode}
 
 \textsf{texhigh} 默认的定义以及部分命令的用法可参考 \texttt{texhigh.prelude.ths} 文件。
