@@ -20,7 +20,7 @@
 %% 
 %% ---------------------------------------------------------------------
 %% 
-\ProvidesExplPackage{texhigh}{2024-08-18}{0.3.2}{highlight TeX string}
+\ProvidesExplPackage{texhigh}{2024-08-22}{0.3.4-a}{highlight TeX string}
 
 \cs_new_protected:Npn \texhigh_check_bin:TF #1#2
   {
@@ -35,6 +35,10 @@
     \msg_fatal:nn { texhigh } { bin-not-found }
   }
 
+\quark_new:N \q__texhigh_nil
+\__kernel_quark_new_conditional:Nn \__texhigh_quark_if_nil:n { TF }
+\quark_new:N \q__texhigh_stop
+\cs_new:Npn \__texhigh_use_none_delimit_by_q_stop:nw #1 #2 \q__texhigh_stop {#1}
 \int_new:N \l__texhigh_tmp_int
 \def\texhigh@style@ext{ths}
 \cs_new_protected:Npn \texhigh@inputstyle #1#2#3 % style, options, date
@@ -123,6 +127,127 @@
 \cs_new:Npn \__texhigh_find:nn #1#2
   { \cs_if_exist:cT { TH@#1@#2 } { \seq_map_break:n { \use_i:nnn {#2} } } }
 \cs_new:Npn \__texhigh_dotted_fallback:nn #1#2 { ? }
+
+\tl_new:N \l__texhigh_grab_range_tl
+\str_new:N \l__texhigh_grab_range_name_str
+\int_new:N \l__texhigh_grab_range_int
+\cs_new:Npn \__texhigh_grab_tmp:w { }
+\cs_new_protected:Npn \THCollectRange #1 #2
+  {
+    \tl_if_eq:nnTF {#2} { \THrs }
+      { \texhigh_grab_range:nw {#1} \THrs }
+      {
+        \tl_if_eq:nnTF {#2} { \THes }
+          { \__texhigh_grab_escape:nw {#1} \THes }
+          { #2 }
+      }
+  }
+\cs_new_protected:Npn \__texhigh_grab_escape:nw #1 #2 #3
+  {
+    \group_begin:
+    \cs_gset:Npn \__texhigh_grab_tmp:w ##1 ##2 ##3 { \group_end: #1 }
+    \str_set:Nn \l__texhigh_grab_range_name_str {#3}
+    \__texhigh_grab_escape_aux:w \prg_do_nothing:
+  }
+\cs_new:Npn \__texhigh_grab_escape_aux:w #1 \THee #2
+  {
+    \str_if_eq:onTF \l__texhigh_grab_range_name_str {#2}
+      {
+        \use:e
+          {
+            \exp_not:N \__texhigh_grab_tmp:w
+              { \l__texhigh_grab_range_name_str }
+              { \exp_not:o {#1} }
+              { \exp_not:o {#1} }
+          }
+      }
+      {
+        \msg_error:nn { texhigh } { escape-nested }
+        \group_end: #1 \THee {#2}
+      }
+  }
+\cs_new_protected:Npn \texhigh_grab_range:nw #1 % do code
+  {
+    \group_begin:
+    \tl_clear:N \l__texhigh_grab_range_tl
+    \int_set:Nn \l__texhigh_grab_range_int { 1 }
+    \cs_gset:Npn \__texhigh_grab_tmp:w ##1 ##2 ##3 { \group_end: #1 } % range name, range value, raw range
+    \__texhigh_grab_range_set_cs:
+    \__texhigh_grab_range_aux:wn \prg_do_nothing:
+  }
+\cs_new_eq:NN \texhigh@collect@range \texhigh_grab_range:nw
+\cs_new:Npn \__texhigh_grab_range_set_cs:
+  {
+    \cs_set:Npn \THls {}
+    \cs_set:Npn \THle { \obeyedline }
+    \cs_set:Npn \THin ##1 { \prg_replicate:nn {##1} { ~ } }
+    \cs_set:Npn \THcr ##1 { \char_generate:nn {##1} { 12 } }
+    \cs_set:Npn \THbp ##1 {}
+    \cs_set:Npn \THcs ##1##2##3 { \texhigh@normalize@cs{##2} \texhigh@normalize@cs{##3} }
+    \cs_set:Npn \THch ##1##2 { \texhigh@normalize@cs{##2} }
+    \cs_set:Npn \THrs ##1 {}
+    \cs_set:Npn \THre ##1 {}
+    \cs_set:Npn \THst ##1##2 { ##2 }
+    \cs_set:Npn \THes ##1 { \__texhigh_grab_escape:nnw { \exp_not:n } {##1} \prg_do_nothing: }
+    \cs_set:Npn \THee ##1 {}
+    \cs_set:Npn \THpn ##1##2 { \texhigh@normalize@cs{##2} }
+  }
+\cs_new:Npn \__texhigh_grab_escape:nnw #1 #2 #3 \THee #4 % disallow nest
+  { \use:e { \exp_not:n {#1} { \exp_not:o {#3} } } } % #3 starts with \prg_do_nothing:
+\cs_new:Npn \__texhigh_grab_range_aux:wn #1 \THrs #2
+  {
+    \tl_if_blank:oTF {#1} % #1 starts with \prg_do_nothing:
+      {
+        \str_set:Nn \l__texhigh_grab_range_name_str {#2}
+        \__texhigh_grab_range_auxi:wn \prg_do_nothing:
+      }
+      {
+        \msg_error:nn { texhigh } { grab-range }
+        \group_end: #1 \THrs {#2}
+      }
+  }
+\cs_new:Npn \__texhigh_grab_range_auxi:wn #1 \THre #2
+  {
+    \str_if_eq:onTF \l__texhigh_grab_range_name_str {#2}
+      {
+        \int_decr:N \l__texhigh_grab_range_int
+        \__texhigh_grab_range_auxii:w #1 \q__texhigh_nil
+        \int_compare:nNnTF \l__texhigh_grab_range_int = \c_zero_int
+          {
+            \use:e
+              {
+                \exp_not:N \__texhigh_grab_tmp:w
+                  { \l__texhigh_grab_range_name_str }
+                  { \l__texhigh_grab_range_tl }
+                  { \exp_not:o \l__texhigh_grab_range_tl }
+              }
+          }
+          {
+            \tl_put_right:Nn \l__texhigh_grab_range_tl { \THre {#2} }
+            \__texhigh_grab_range_auxi:wn \prg_do_nothing:
+          }
+      }
+      {
+        \tl_put_right:No \l__texhigh_grab_range_tl { #1 \THre {#2} }
+        \__texhigh_grab_range_auxi:wn \prg_do_nothing:
+      }
+  }
+\cs_new:Npn \__texhigh_grab_range_auxii:w #1 \q__texhigh_nil
+  {
+    \tl_if_in:nnTF {#1} { \THrs }
+      { \__texhigh_grab_range_auxiii:wn #1 \q__texhigh_nil }
+      { \tl_put_right:No \l__texhigh_grab_range_tl {#1} }
+  }
+\cs_new:Npn \__texhigh_grab_range_auxiii:wn #1 \THrs #2
+  {
+    \tl_put_right:No \l__texhigh_grab_range_tl { #1 \THrs {#2} }
+    \str_if_eq:onT \l__texhigh_grab_range_name_str {#2}
+      { \int_incr:N \l__texhigh_grab_range_int }
+    \__texhigh_grab_range_auxii:w \prg_do_nothing:
+  }
+\msg_new:nnn { texhigh } { grab-range }
+  { \texhigh_grab_range:nw is~required~to~be~followed~by~\THrs. }
+
 \cs_new:Npx \texhigh@normalize@cs #1
   {
     \exp_not:N \__texhigh_normalize_cs:w #1 "
@@ -439,6 +564,8 @@
     high .meta:nn = { texhigh/high } {#1} ,
     layout .meta:nn = { texhigh/layout } {#1} ,
   }
+\tl_new:N \l__texhigh_fn_tl
+\tl_new:N \l__texhigh_output_tl
 \tl_new:N \l__texhigh_char_replacements_tl
 \seq_new:N \l__texhigh_lexers_seq
 \prop_new:N \l__texhigh_config_prop
@@ -482,7 +609,9 @@
       \tl_clear:N \l__texhigh_char_replacements_tl
       \__texhigh_add_char_replacements:n {#1} ,
     char-replacements+ .code:n = \__texhigh_add_char_replacements:n {#1} ,
-    output .tl_set:N = \l__texhigh_output_tl ,
+    output .code:n = \tl_set:Nn \l__texhigh_output_tl {#1}
+      \tl_if_empty:NF \l__texhigh_output_tl
+        { \tl_put_left:NV \l__texhigh_output_tl \l__texhigh_cache_dir_tl },
     output .groups:n = command ,
     no-configs .code:n =
       {
@@ -703,7 +832,7 @@
       }
       {
         \clist_set:No \l__texhigh_tmp_clist \l__texhigh_tmp_tl
-        \prop_gput:Nee \l__texhigh_config_base_prop
+        \prop_put:Nee \l__texhigh_config_base_prop
           { cs_categories. \__texhigh_cmd_stringify:n \l__texhigh_tmp_str }
           { \texhigh_base_encode:e { \__texhigh_clist_to_str_vec:N \l__texhigh_tmp_clist } }
       }
@@ -771,7 +900,7 @@
 \cs_new_protected:Npn \__texhigh_add_escape_inside:n #1
   {
     \str_set:Nn \l__texhigh_tmp_str { [#1]escapeinside }
-    \exp_args:NNoo \str_replace_all:Nnn \l__texhigh_tmp_str { \c_backslash_str } { \c_hash_str }
+    \exp_args:NNo \str_replace_all:Nnn \l__texhigh_tmp_str { \c_backslash_str } { / }
     \tl_if_single_token:nTF {#1}
       {
         \seq_put_right:Ne \l__texhigh_enabled_ranges_seq { \l__texhigh_tmp_str }
@@ -811,7 +940,8 @@
 \keys_define:nn { texhigh/range-config }
   {
     escape .bool_set:N = \l__texhigh_range_escape_bool ,
-    start .code:n = \__texhigh_normalize_string:Nn \l__texhigh_range_start_tl {#1} ,
+    start .code:n = \__texhigh_normalize_string:Nn \l__texhigh_range_start_tl {'#1'} ,
+    start* .code:n = \__texhigh_normalize_string:Nn \l__texhigh_range_start_tl {{#1}} ,
     arguments .tl_set:N = \l__texhigh_range_arguments_tl ,
     remove-start .choices:nn = { true, false }
       { \tl_set_eq:NN \l__texhigh_range_remove_start_tl \l_keys_choice_tl } ,
@@ -831,6 +961,11 @@
     start-is-arg .choices:nn = { true, false }
       { \tl_set_eq:NN \l__texhigh_range_start_is_arg_tl \l_keys_choice_tl },
     start-is-arg .default:n = true ,
+    args-numbered .choices:nn = { true, false }
+      { \tl_set_eq:NN \l__texhigh_range_args_numbered_tl \l_keys_choice_tl },
+    args-numbered .default:n = true ,
+    skip-if-pre .code:n = \__texhigh_normalize_string:Nn \l__texhigh_range_skip_if_pre_tl {#1} ,
+    skip-if-post .code:n = \__texhigh_normalize_string:Nn \l__texhigh_range_skip_if_post_tl {#1} ,
   }
 \cs_new_protected:Npn \__texhigh_add_range:nn #1#2
   {
@@ -844,6 +979,9 @@
     \tl_set:Nn \l__texhigh_range_insert_ending_tl { false }
     \tl_set:Nn \l__texhigh_range_in_comments_tl { any }
     \tl_set:Nn \l__texhigh_range_start_is_arg_tl { false }
+    \tl_set:Nn \l__texhigh_range_args_numbered_tl { false }
+    \tl_clear:N \l__texhigh_range_skip_if_pre_tl
+    \tl_clear:N \l__texhigh_range_skip_if_post_tl
     \keys_set:nn { texhigh/range-config } {#2}
     \__texhigh_normalize_range_arguments:N \l__texhigh_range_arguments_tl
     \seq_put_right:Ne \l__texhigh_enabled_ranges_seq \l__texhigh_tmp_str
@@ -852,21 +990,24 @@
       {
         \texhigh_base_encode:e
           {
-            { start='\l__texhigh_range_start_tl', arguments='\l__texhigh_range_arguments_tl',
+            { start=\l__texhigh_range_start_tl, arguments='\l__texhigh_range_arguments_tl',
               \bool_if:NTF \l__texhigh_range_escape_bool
                 {
                   remove_start=\l__texhigh_range_remove_start_tl,
                   insert_brace=\l__texhigh_range_insert_brace_tl,
                   use_argument=\l__texhigh_range_use_argument_tl,
-                  insert_ending=\l__texhigh_range_insert_ending_tl,
-                  in_comments='\l__texhigh_range_in_comments_tl',
-                  start_is_arg=\l__texhigh_range_start_is_arg_tl
                 }
                 {
-                  insert_ending=\l__texhigh_range_insert_ending_tl,
-                  in_comments='\l__texhigh_range_in_comments_tl',
-                  start_is_arg=\l__texhigh_range_start_is_arg_tl
+                  args_numbered=\l__texhigh_range_args_numbered_tl,
                 }
+              insert_ending=\l__texhigh_range_insert_ending_tl,
+              in_comments='\l__texhigh_range_in_comments_tl',
+              start_is_arg=\l__texhigh_range_start_is_arg_tl
+
+              \tl_if_empty:NF \l__texhigh_range_skip_if_pre_tl
+                { , skip_if_pre=\__texhigh_clist_to_str_vec:N \l__texhigh_range_skip_if_pre_tl }
+              \tl_if_empty:NF \l__texhigh_range_skip_if_post_tl
+                { , skip_if_post=\__texhigh_clist_to_str_vec:N \l__texhigh_range_skip_if_post_tl }
             }
           }
       }
@@ -988,6 +1129,13 @@
     \@@par
   }
 
+\cs_new_protected:Npn \__texhigh_no_lsle:
+  {
+    \cs_set_protected:Npn \THls {}
+    \cs_set_protected:Npn \THlsPlain {}
+    \cs_set_protected:Npn \THle {}
+    \cs_set_protected:Npn \THlePlain {}
+  }
 \cs_new_protected:Npn \__texhigh_before:
   {
     \tl_set:Nn \l__texhigh_command_tl { high }
@@ -1007,10 +1155,7 @@
 \cs_new_protected:Npn \__texhigh_cmd_before: 
   {
     \__texhigh_before:
-    \cs_set_protected:Npn \THls {}
-    \cs_set_protected:Npn \THlsPlain {}
-    \cs_set_protected:Npn \THle {}
-    \cs_set_protected:Npn \THlePlain {}
+    \__texhigh_no_lsle:
   }
 \cs_new_protected:Npn \__texhigh_cmd_begin:
   {
@@ -1071,7 +1216,6 @@
         \tex_input:D | " \__texhigh_args_with_file:n \l__texhigh_fn_tl "
       }
       {
-        \tl_put_left:NV \l__texhigh_output_tl \l__texhigh_cache_dir_tl
         \sys_shell_now:e { \__texhigh_args_with_file:n \l__texhigh_fn_tl }
         \file_input:V \l__texhigh_output_tl
       }
@@ -1175,6 +1319,8 @@
 \cs_new_protected:Npn \TeXHighNewline { \@@par }
 \keys_define:nn { texhigh/layout }
   {
+    system-fonts .bool_set:N = \l__texhigh_system_fonts_bool ,
+    system-fonts .initial:n = true ,
     fonts .clist_set:N   = \l__texhigh_fonts_clist ,
     fonts+       .code:n = \clist_put_right:Nn \l__texhigh_fonts_clist {#1} ,
     fontsize .dim_set:N  = \l__texhigh_fontsize_dim ,
@@ -1196,6 +1342,9 @@
   }
 \cs_new:Npn \__texhigh_layout_args:n #1
   {
+    \bool_if:NTF \l__texhigh_system_fonts_bool
+      { --system-fonts \c_space_tl true  \c_space_tl }
+      { --system-fonts \c_space_tl false \c_space_tl }
     \dim_compare:nNnT \l__texhigh_fontsize_dim > { 0pt }
       {
         --fontsize \c_space_tl
