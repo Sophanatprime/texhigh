@@ -4,129 +4,160 @@
 % \THSetCharReplacement*{\ }{\ifincsname\space\else\textvisiblespace\fi}
 \THSetCharReplacement{\^^I}{\mbox{\THcolor{gray8}$\rightarrow$}}
 
-\texhighsetclassfallback{ch}{group.0}{group}
-\texhighsetclassfallback{ch}{group.1}{group}
-\texhighsetclassfallback{ch}{group.2}{group}
-\texhighsetclassfallback{ch}{group.3}{group}
-\texhighsetclassfallback{ch}{group.4}{group.1, group}
-\texhighsetclassfallback{ch}{group.5}{group.2, group}
-\texhighsetclassfallback{ch}{group.6}{group.3, group}
-\texhighsetclassfallback{ch}{group.7}{group.1, group}
-\texhighsetclassfallback{ch}{group.8}{group.2, group}
-\texhighsetclassfallback{ch}{group.9}{group.3, group}
-\texhighsetclassfallback{ch}{group.-1}{group.miss}
-\texhighsetclassfallback{ch}{group.-2}{group.miss}
-\texhighsetclassfallback{ch}{group.-3}{group.miss}
-\texhighsetclassfallback{ch}{group.-4}{group.miss}
-\texhighsetclassfallback{ch}{group.-5}{group.miss}
-\texhighsetclassfallback{cs}{primitive.luatex}{primitive, tex, latex}
-\texhighsetclassfallback{cs}{primitive.xetex}{primitive, tex, latex}
-\texhighsetclassfallback{cs}{primitive.uptex}{primitive, tex, latex}
-\texhighsetclassfallback{cs}{primitive.pdftex}{primitive, tex, latex}
-\texhighsetclassfallback{cs}{primitive.etex}{primitive, tex, latex}
-\texhighsetclassfallback{cs}{primitive.knuthtex}{primitive, tex, latex}
-\texhighsetclassfallback{cs}{primitive.widely}{primitive, tex, latex}
-\texhighsetclassfallback{cs}{primitive.sometex}{primitive, tex, latex}
-\texhighsetclassfallback{cs}{primitive.luametatex}{context}
-\texhighsetclassfallback{cs}{plaintex}{tex}
-\texhighsetclassfallback{cs}{latex.document}{latex}
-\texhighsetclassfallback{cs}{latex.programming}{latex}
-\texhighsetclassfallback{cs}{latex.internal}{internal, latex}
-\texhighsetclassfallback{cs}{latex.public}{latex}
-\texhighsetclassfallback{cs}{latex3.primitive}{latex3.function.kernel, latex3.function, latex3, primitive}
-\texhighsetclassfallback{cs}{latex3.variable}{latex3, latex}
-\texhighsetclassfallback{cs}{latex3.function}{latex3, latex}
-\texhighsetclassfallback{cs}{latex3.variable.kernel}{latex3.kernel, latex3.variable, latex3}
-\texhighsetclassfallback{cs}{latex3.function.kernel}{latex3.kernel, latex3.function, latex3}
-\texhighsetclassfallback{cs}{latex3.variable.internal}{internal, latex3.variable, latex3}
-\texhighsetclassfallback{cs}{latex3.variable.public}{latex3.variable, latex3}
-\texhighsetclassfallback{cs}{latex3.function.internal}{internal, latex3.function, latex3}
-\texhighsetclassfallback{cs}{latex3.function.public}{latex3.function, latex3}
-\texhighsetclassfallback{cs}{math}{tex, latex}
-\texhighsetclassfallback{cs}{symbol}{tex, latex}
-\texhighsetclassfallback{rs}{math.inline}{math}
-\texhighsetclassfallback{re}{math.inline}{math}
-\texhighsetclassfallback{rs}{argument.m}{argument}
-\texhighsetclassfallback{re}{argument.m}{argument}
-\texhighsetclassfallback{rs}{argument.o}{argument.d, argument}
-\texhighsetclassfallback{re}{argument.o}{argument.d, argument}
-\texhighsetclassfallback{rs}{argument.O}{argument.d, argument}
-\texhighsetclassfallback{re}{argument.O}{argument.d, argument}
-\texhighsetclassfallback{rs}{argument.d}{argument}
-\texhighsetclassfallback{re}{argument.d}{argument}
-\texhighsetclassfallback{rs}{argument.D}{argument.d, argument}
-\texhighsetclassfallback{re}{argument.D}{argument.d, argument}
-\texhighsetclassfallback{rs}{argument.r}{argument.m, argument}
-\texhighsetclassfallback{re}{argument.r}{argument.m, argument}
-\texhighsetclassfallback{rs}{argument.R}{argument.m, argument}
-\texhighsetclassfallback{re}{argument.R}{argument.m, argument}
-\texhighsetclassfallback{rs}{argument.s}{argument.t, argument}
-\texhighsetclassfallback{re}{argument.s}{argument.t, argument}
-\texhighsetclassfallback{rs}{argument.t}{argument}
-\texhighsetclassfallback{re}{argument.t}{argument}
-\texhighsetclassfallback{rs}{argument.v}{argument}
-\texhighsetclassfallback{re}{argument.v}{argument}
-\texhighsetclassfallback{rs}{argument.l}{argument}
-\texhighsetclassfallback{re}{argument.l}{argument}
-\texhighsetclassfallback{rs}{argument.g}{argument.d, argument}
-\texhighsetclassfallback{re}{argument.g}{argument.d, argument}
-\texhighsetclassfallback{rs}{argument.G}{argument.d, argument}
-\texhighsetclassfallback{re}{argument.G}{argument.d, argument}
-\texhighsetclassfallback{rs}{argument.u}{argument}
-\texhighsetclassfallback{re}{argument.u}{argument}
-\texhighsetclassfallback{rs}{argument.U}{argument.u, argument}
-\texhighsetclassfallback{re}{argument.U}{argument.u, argument}
-\texhighsetclassfallback{rs}{argument.^^J}{argument.u, argument}
-\texhighsetclassfallback{re}{argument.^^J}{argument.u, argument}
+\THSetFallback{ch}{group.0}{group}
+\THSetFallback{ch}{group.1}{group}
+\THSetFallback{ch}{group.2}{group}
+\THSetFallback{ch}{group.3}{group}
+\THSetFallback{ch}{group.4}{group.1, group}
+\THSetFallback{ch}{group.5}{group.2, group}
+\THSetFallback{ch}{group.6}{group.3, group}
+\THSetFallback{ch}{group.7}{group.1, group}
+\THSetFallback{ch}{group.8}{group.2, group}
+\THSetFallback{ch}{group.9}{group.3, group}
+\THSetFallback{ch}{group.-1}{group.miss}
+\THSetFallback{ch}{group.-2}{group.miss}
+\THSetFallback{ch}{group.-3}{group.miss}
+\THSetFallback{ch}{group.-4}{group.miss}
+\THSetFallback{ch}{group.-5}{group.miss}
+\THSetFallback{cs}{primitive.luatex}{primitive, tex, latex}
+\THSetFallback{cs}{primitive.xetex}{primitive, tex, latex}
+\THSetFallback{cs}{primitive.uptex}{primitive, tex, latex}
+\THSetFallback{cs}{primitive.pdftex}{primitive, tex, latex}
+\THSetFallback{cs}{primitive.etex}{primitive, tex, latex}
+\THSetFallback{cs}{primitive.knuthtex}{primitive, tex, latex}
+\THSetFallback{cs}{primitive.widely}{primitive, tex, latex}
+\THSetFallback{cs}{primitive.sometex}{primitive, tex, latex}
+\THSetFallback{cs}{primitive.luametatex}{context}
+\THSetFallback{cs}{plaintex}{tex}
+\THSetFallback{cs}{latex.document}{latex}
+\THSetFallback{cs}{latex.programming}{latex}
+\THSetFallback{cs}{latex.internal}{internal, latex}
+\THSetFallback{cs}{latex.public}{latex}
+\THSetFallback{cs}{latex3.primitive}{latex3.function.kernel, latex3.function, latex3, primitive}
+\THSetFallback{cs}{latex3.variable}{latex3, latex}
+\THSetFallback{cs}{latex3.function}{latex3, latex}
+\THSetFallback{cs}{latex3.variable.kernel}{latex3.kernel, latex3.variable, latex3}
+\THSetFallback{cs}{latex3.function.kernel}{latex3.kernel, latex3.function, latex3}
+\THSetFallback{cs}{latex3.variable.internal}{internal, latex3.variable, latex3}
+\THSetFallback{cs}{latex3.variable.public}{latex3.variable, latex3}
+\THSetFallback{cs}{latex3.function.internal}{internal, latex3.function, latex3}
+\THSetFallback{cs}{latex3.function.public}{latex3.function, latex3}
+\THSetFallback{cs}{math}{tex, latex}
+\THSetFallback{cs}{symbol}{tex, latex}
+\THSetFallback{rs}{math.inline}{math}
+\THSetFallback{re}{math.inline}{math}
+\THSetFallback{rs}{argument.m}{argument}
+\THSetFallback{re}{argument.m}{argument}
+\THSetFallback{rs}{argument.o}{argument.d, argument}
+\THSetFallback{re}{argument.o}{argument.d, argument}
+\THSetFallback{rs}{argument.O}{argument.d, argument}
+\THSetFallback{re}{argument.O}{argument.d, argument}
+\THSetFallback{rs}{argument.d}{argument}
+\THSetFallback{re}{argument.d}{argument}
+\THSetFallback{rs}{argument.D}{argument.d, argument}
+\THSetFallback{re}{argument.D}{argument.d, argument}
+\THSetFallback{rs}{argument.r}{argument.m, argument}
+\THSetFallback{re}{argument.r}{argument.m, argument}
+\THSetFallback{rs}{argument.R}{argument.m, argument}
+\THSetFallback{re}{argument.R}{argument.m, argument}
+\THSetFallback{rs}{argument.s}{argument.t, argument}
+\THSetFallback{re}{argument.s}{argument.t, argument}
+\THSetFallback{rs}{argument.t}{argument}
+\THSetFallback{re}{argument.t}{argument}
+\THSetFallback{rs}{argument.v}{argument}
+\THSetFallback{re}{argument.v}{argument}
+\THSetFallback{rs}{argument.l}{argument}
+\THSetFallback{re}{argument.l}{argument}
+\THSetFallback{rs}{argument.g}{argument.d, argument}
+\THSetFallback{re}{argument.g}{argument.d, argument}
+\THSetFallback{rs}{argument.G}{argument.d, argument}
+\THSetFallback{re}{argument.G}{argument.d, argument}
+\THSetFallback{rs}{argument.u}{argument}
+\THSetFallback{re}{argument.u}{argument}
+\THSetFallback{rs}{argument.U}{argument.u, argument}
+\THSetFallback{re}{argument.U}{argument.u, argument}
+\THSetFallback{rs}{argument.^^J}{argument.u, argument}
+\THSetFallback{re}{argument.^^J}{argument.u, argument}
 
 \@ifpackageloaded{xcolor}{}{\RequirePackage{xcolor}}
 \RequirePackage{ninecolors}
 
-\THSaveStyle{plain}{\THSetPlainStyle{*}}
+\THSaveStyle{plain}{%
+  \THRemoveClasses{bp,cs,ch,st,es,ee,rs,re,pn}%
+  \THSetBP{?}{\TH@bp@PLAIN}%
+  \THSetCS{?}{\TH@cs@PLAIN{#1}{#2}}%
+  \THSetCH{?}{\TH@ch@PLAIN{#1}}%
+  \THSetST{?}{\TH@st@PLAIN{#1}}%
+  \THSetES{?}{\TH@es@PLAIN}%
+  \THSetEE{?}{\TH@ee@PLAIN}%
+  \THSetRS{?}{\TH@rs@PLAIN}%
+  \THSetRE{?}{\TH@re@PLAIN}%
+  \THSetRS{comment}{\begingroup\THcolor[gray]{0.5}}%
+  \THSetRE{comment}{\endgroup}%
+  \THSetPN{?}{\TH@pn@PLAIN{#1}}%
+}
 \THSaveStyle{plain0}{\THSetPlainStyle{bp,cs,ch,st,es,ee,pn,color}%
-  \THSetClassRS{comment}{\begingroup\THColorStatus{1}\THcolor[gray]{0.5}}%
-  \THSetClassRE{comment}{\endgroup}}
+  \THSetRS{comment}{\begingroup\THColorStatus{1}\THcolor[gray]{0.5}}%
+  \THSetRE{comment}{\endgroup}}
+\THSaveStyle{plain1}{\THSetPlainStyle{*}}
 
+\ExplSyntaxOn
+\NewDocumentCommand \@texhigh@rescan@lines { +v }
+  {
+    \group_begin:
+    \int_set:Nn \tex_newlinechar:D { `^^J }
+    \int_set:Nn \tex_endlinechar:D { -1 }
+    \tex_everyeof:D { }
+    \tl_set:Nn \l__texhigh_tmp_tl {#1}
+    \tl_replace_all:Nnn \l__texhigh_tmp_tl { \obeyedline } { ^^J }
+    \tex_scantokens:D \exp_after:wN { \l__texhigh_tmp_tl }
+    \group_end:
+  }
+\ExplSyntaxOff
 \THSaveStyle{basic}{%
-  \THSetClassBP{?}
+  \THSetBP{?}
     {\ifhmode\discretionary
       {\hbox{{\THcolor{gray8}\ $\hookleftarrow$}}}
       {\hbox{{\THcolor{gray8}$\hookrightarrow$\ }}}
       {}\fi}%
-  \THSetClassCS{texhigh}{{\fboxsep\z@% for texhigh package itself
+  \THSetCS{texhigh}{{\fboxsep\z@% for texhigh package itself
     \fcolorbox{yellow}{yellow}{\linespread{1}\bfseries\strut\THcolor{black}#1#2}}}% #1=escape char, #2=cs name
-  \THSetClassCS{latex3.primitive}{\mbox{\THcolor{red4}\bfseries#1#2}}%
-  \THSetClassCS{latex3.kernel}{\mbox{\THcolor{red4}\bfseries#1#2}}%
-  \THSetClassCS{latex3.variable}{\mbox{\THcolor{azure6}#1#2}}%
-  \THSetClassCS{latex3.function}{\mbox{\THcolor{green5}#1#2}}%
-  \THSetClassCS{internal}{\mbox{\THcolor{brown3}#1#2}}%
-  \THSetClassCS{latex.document}{\mbox{\THcolor{magenta4}\bfseries#1#2}}%
-  \THSetClassCS{latex.programming}{\mbox{\THcolor{yellow7}#1#2}}%
-  \THSetClassCS{latex}{\mbox{\THcolor{yellow8}#1#2}}%
-  \THSetClassCS{primitive}{\texhigh@underline{\THcolor{purple5}\bfseries#1#2}}%
-  \THSetClassCS{?}{\mbox{\THcolor{magenta5}#1#2}}%
-  \THSetClassCH{?}{#1}% char
-  \THSetClassPN{?}{#1}% punctuation
-  \THSetClassCH{group}{\mbox{\THcolor{purple3}#1}}%
-  \THSetClassCH{group.1}{\mbox{\THcolor[HTML]{179FFF}#1}}
-  \THSetClassCH{group.2}{\mbox{\THcolor[HTML]{DA6ED6}#1}}
-  \THSetClassCH{group.3}{\mbox{\THcolor[HTML]{F8BA16}#1}}
-  \THSetClassCH{group.miss}{\mbox{\THcolor{red}#1}}%
-  \THSetClassCH{digit}{\mbox{\THcolor{azure8}#1}}%
-  \THSetClassRS{comment}{\begingroup\THcolor[gray]{0.5}\THSetPlainStyle{cs,color}}%
-  \THSetClassRE{comment}{\endgroup}%
-  \THSetClassRS{parameter}{\begingroup\THcolor{magenta2}}%
-  \THSetClassRE{parameter}{\endgroup}%
-  \THSetClassRS{math}{\begingroup\THcolor{cyan7}}%
-  \THSetClassRE{math}{\endgroup}%
-  \THSetClassES{[]texcl}{\begingroup\@texhigh@reset@ctab\@texhigh@reset@font\ignorespaces}%
-  \THSetClassEE{[]texcl}{\endgroup}%
+  \THSetCS{latex3.primitive}{\mbox{\THcolor{red4}\bfseries#1#2}}%
+  \THSetCS{latex3.kernel}{\mbox{\THcolor{red4}\bfseries#1#2}}%
+  \THSetCS{latex3.variable}{\mbox{\THcolor{azure6}#1#2}}%
+  \THSetCS{latex3.function}{\mbox{\THcolor{green5}#1#2}}%
+  \THSetCS{internal}{\mbox{\THcolor{brown3}#1#2}}%
+  \THSetCS{latex.document}{\mbox{\THcolor{magenta4}\bfseries#1#2}}%
+  \THSetCS{latex.programming}{\mbox{\THcolor{yellow7}#1#2}}%
+  \THSetCS{latex}{\mbox{\THcolor{yellow8}#1#2}}%
+  \THSetCS{primitive}{\texhigh@underline{\THcolor{purple5}\bfseries#1#2}}%
+  \THSetCS{?}{\mbox{\THcolor{magenta5}#1#2}}%
+  \THSetCH{?}{#1}% char
+  \THSetPN{?}{#1}% punctuation
+  \THSetCH{group}{\mbox{\THcolor{purple3}#1}}%
+  \THSetCH{group.1}{\mbox{\THcolor[HTML]{179FFF}#1}}
+  \THSetCH{group.2}{\mbox{\THcolor[HTML]{DA6ED6}#1}}
+  \THSetCH{group.3}{\mbox{\THcolor[HTML]{F8BA16}#1}}
+  \THSetCH{group.miss}{\mbox{\THcolor{red}#1}}%
+  \THSetCH{digit}{\mbox{\THcolor{azure8}#1}}%
+  \THSetRS{comment}{\begingroup\THcolor[gray]{0.5}\THSetPlainStyle{cs,color}}%
+  \THSetRE{comment}{\endgroup}%
+  \THSetRS{parameter}{\begingroup\THcolor{magenta2}}%
+  \THSetRE{parameter}{\endgroup}%
+  \THSetRS{math}{\begingroup\THcolor{cyan7}}%
+  \THSetRE{math}{\endgroup}%
+  \THSetES{[]texcl}{\begingroup\@texhigh@reset@ctab\@texhigh@reset@font\@texhigh@rescan@lines}%
+  \THSetEE{[]texcl}{\endgroup}%
+  \THSetES{[*cs*]escapeinside}{\begingroup\@texhigh@reset@ctab\@texhigh@reset@font\@texhigh@rescan@lines}%
+  \THSetEE{[*cs*]escapeinside}{\endgroup}%
+  \THSetES{[*ch*]escapeinside}{\begingroup\@texhigh@reset@ctab\@texhigh@reset@font\@texhigh@rescan@lines}%
+  \THSetEE{[*ch*]escapeinside}{\endgroup}%
 }
 \THUseSavedStyle{basic}
 
 \long\def\texhigh@underline#1{\leavevmode\setbox\z@\hbox{{#1}}%
-  \hb@xt@\wd\z@{\kern.05em
-    \vrule height-.25ex depth.4ex width\dimexpr\wd\z@-.1em\relax \kern.05em
+  \hb@xt@\wd\z@{\@tempdima.05em\kern\@tempdima
+    \vrule height-.25ex depth.4ex width\dimexpr\wd\z@-2\@tempdima \kern\@tempdima
     \llap{\unhbox\z@}}}
 
 \if@texhighload@color
@@ -148,10 +179,10 @@
     texhigh/gradient ?/.style={left color=red,right color=blue},
     texhigh/gradient-style/.style={texhigh/gradient #1}}
   \THSaveStyle{tikz.gradient}{%
-    \THSetClassCS{latex}{\texhigh@underline{\THcolor{purple}\bfseries#1#2}}
-    \THSetClassCS{primitive}
+    \THSetCS{latex}{\texhigh@underline{\THcolor{purple}\bfseries#1#2}}
+    \THSetCS{primitive}
       {\texhigh@shadetext{texhigh/gradient-style=primitive}{\bfseries #1#2}}%
-    \THSetClassCS{?}{\texhigh@shadetext{texhigh/gradient-style=?}{#1#2}}%
+    \THSetCS{?}{\texhigh@shadetext{texhigh/gradient-style=?}{#1#2}}%
   }
 \fi
 

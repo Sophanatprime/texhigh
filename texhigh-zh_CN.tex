@@ -1,0 +1,1265 @@
+\DocumentMetadata{lang=cn}
+\documentclass[class=article,openany]{cusdoc}
+
+\ExplSyntaxOn\makeatletter
+\sys_if_shell_unrestricted:T
+  {
+    \usepackage{texhigh}
+    \cs_if_exist:NTF \xeCJKsetup
+      {
+        \THSaveStyle{xamplestyle}{
+          \SetKeys[texhigh/high]{config-file+=texhigh-doc.th.cfg,
+            font=\xeCJKsetup{CJKecglue={\hskip 0pt plus 0.08\baselineskip}}\normalfont\ttfamily\small}
+        }
+      }
+      {
+        \THSaveStyle{xamplestyle}{
+          \SetKeys[texhigh/high]{config-file+texhigh-doc.th.cfg, font=\normalfont\ttfamily\small}
+        }
+      }
+    \THSaveStyle{cs-ref}
+      {
+        \THSetCS{?}{ \mbox {
+          \tl_set:Nn \macro@escapepart {#1}
+          \tl_set:Nn \macro@namepart {#2}
+          \cus_doc_get_hyper_target:eeN \macro@namepart { function } \l_tmpa_tl
+          \cs_if_exist:cT { r@ \l_tmpa_tl }
+            {
+              \hypersetup{hidelinks}
+              \exp_args:NNo \hyperref [ \l_tmpa_tl ]
+            }
+              { \macro@escapepart \macro@namepart }
+        } }
+      }
+    \RenewDocumentCommand{\xamplecodefile}{+m+m+m}
+      {
+        \IfBlankTF{#2}
+          {\texhighfile[{style=plain,style=cs-ref,#1}]{#3}\par\vskip-5pt plus 1pt minus 1pt\relax}
+          {\lstinputlisting[#1,#2]{#3}}
+      }
+  }
+
+\NewDocumentCommand{\token}{ s o m}
+  {
+    \group_begin:
+    \tl_if_novalue:nTF {#2}
+      {
+        \bool_if:nTF {#1}
+          { \fboxsep2pt \fbox{ \ttfamily #3 } }
+          { \texttt{ \c_backslash_str #3 } }
+      }
+      { \texttt {#3} \textsubscript{#2} }
+    \group_end:
+    \allowbreak
+  }
+\NewDocumentCommand\prolist{ O{，} O{\texttt} m }
+  {
+    \group_begin:
+    \seq_set_from_clist:Nn \l_tmpa_seq {#3}
+    \seq_pop_left:NNT \l_tmpa_seq \l_tmpa_tl
+      {
+        #2{ \l_tmpa_tl }
+        \seq_map_inline:Nn \l_tmpa_seq { #1 #2{##1} }
+      }
+    \group_end:
+  }
+
+\NewDocumentEnvironment{thverbatim}{+!O{}}
+  {\UseHook{env/texhigh/begin}\texhigh[gobble=auto,left-space=2cm,right-space=2cm,before=\smallskip,after=\nointerlineskip\smallskip,#1]}
+  {\endtexhigh\@endparenv\UseHook{env/texhigh/end}}
+\makeatother\ExplSyntaxOff
+
+\hypersetup{pdfauthor={Longaster, \TeX high},
+  pdftitle=\TeX high宏包手册,
+  pdfcreator={\XeLaTeX} with hyperref and \CusLaTeX}
+
+\makeatletter
+\setuptitle[section]{format=\bfseries\Large,
+  beforeskip=10pt plus 5pt minus 5pt,
+  afterskip=10pt plus 5pt minus 5pt,
+  fixskip, ensureskip,
+}
+\setuptitle[subsection]{format=\bfseries\large,
+  beforeskip=7pt plus 5pt minus 5pt,
+  afterskip=7pt plus 5pt minus 5pt,
+  fixskip, ensureskip,
+}
+\setuplayout{paper=a4,
+  marginparsep=10pt,marginparwidth=100pt,
+  right=1.7cm,left=120pt,top=2.3cm,bottom=2.5cm,
+  headsep=10pt,footskip=30pt,hfoffset=0pt,
+}
+\setpagestyle+{fancy}[totalempty]{\setfoot[c]{\thepage}}
+
+\removegeneralname
+\changes{v0.4}{2025/09/22}{添加文档。}
+\begin{document}
+
+\title{\TeX high —— 高亮 \TeX 源码}
+\author{雾月\thanks{\texttt{longaster@163.com}}}
+\date{\zhtoday\quad v0.4.0}
+\maketitle
+
+\enablecombinedlist
+\def\contentsname{}
+\templatetoc[
+  section={space.left=1cm,space.hang=1cm,width.name=1cm},
+  subsection={space.left=1.5cm,width.name=1cm,space.hang=1cm},
+][columns=2,column-sep=6mm,outer-sep=0pt,ragged]
+
+\bigskip
+
+\pkg{texhigh} 是用于高亮 \TeX 代码的宏包，基于由 Rust 编写的命令行工具
+\href{https://github.com/Sophanatprime/texhigh-rs}{texhigh}，
+\pkg{texhigh} 宏包是对该命令行工具的进一步封装。
+
+
+\section{主要特性}
+
+\pkg{texhigh} 的主要优势是速度快、可自定义程度高。
+
+由于 texhigh 使用 Rust 编写，比起使用 Python 编写的 pygmentize 要快许多。
+同样是处理 4 万行左右的 \texttt{expl3-code.tex} 文件，texhigh 只需 0.2s 左右，
+而 pygmentize 则需 3.5s，有十几倍的差距。
+
+\pkg{texhigh} 有两类配置。
+一类是作用于 texhigh 命令行工具的（config，“配置”），它们用于控制如何解析要高亮的代码；
+另一类是作用于 \TeX 输出的（style，“样式”），它们用于控制如何输出解析后的内容。
+
+texhigh 仍然属于静态解析工具，对于 \TeX 这类上下文\emph{有关}的语言，
+还无法完美地处理所有情形。尽管如此，\pkg{texhigh} 还是有许多可配置的地方。
+
+texhigh 还有实验性质的计算文字布局（layout）的功能，通过它，可以输出 emoji 和颜文字等。
+
+
+\section{主要命令}
+
+\cs{texhighverb}、\cs{texhighfile} 这两个命令分别用于高亮 \TeX 代码和文件。
+\cs{texhigh\-text} 也可用于高亮代码。\cs{texhighinput} 则用于输出已被 texhigh 处理好的内容。
+\env{texhigh} 用于高亮该环境的内容。
+
+\begin{function}{\texhighverb}
+  \begin{syntax}
+    \V\texhighverb \oarg{选项} \meta{token} \meta{tokens} \meta{token}
+    \V\texhighverb \oarg{选项} \marg{balanced tokens}
+  \end{syntax}
+用法和 \tn{verb} 类似，用于高亮 \meta{tokens}。
+\end{function}
+
+\begin{function}{\texhightext}
+  \begin{syntax}
+    \V\texhightext \oarg{选项} \marg{balanced tokens}
+  \end{syntax}
+把 \meta{balanced tokens} 转为字符串，然后高亮它们。\cs{texhighverb} 内部也使用该命令。
+\end{function}
+
+我们可以用 \cs{texhightext} 来定义自己的高亮命令：
+\begin{xample}
+\NewDocumentCommand {\myverb} { v } {\texhightext[use-ctab=latex3]{#1}}
+
+% 二者一样
+\texhighverb[use-ctab=latex3] |\cs_set:Npn \__my_func:n #1 { \tl_to_str:n {#1} }|
+
+\myverb|\cs_set:Npn \__my_func:n #1 { \tl_to_str:n {#1} }|
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{function}{\texhighfile}
+  \begin{syntax}
+    \V\texhighfile \oarg{选项} \marg{文件}
+  \end{syntax}
+高亮 \meta{文件}。
+\end{function}
+
+\begin{function}{\texhighinput}
+  \begin{syntax}
+    \V\texhighinput \oarg{选项} \marg{文件}
+  \end{syntax}
+导入由 texhigh 命令行工具输出的文件。
+
+例如，使用 \cs{texhighfile} \verb|[output=myout.thv]{somefile.tex}| 后，
+可以用 \cs{texhigh\-input} \verb|{myout.thv}| 直接导入。
+\end{function}
+
+\begin{function}{\texhighdefshortverb}
+  \begin{syntax}
+    \V\texhighdefshortverb \oarg{选项} \meta{符号}
+  \end{syntax}
+把 \meta{符号} 局部地设置为“短的”高亮命令。如 \verb!| |! 那样。
+\pkg{texhigh} 默认情况下不把任何符号设置为短的高亮命令。
+\end{function}
+
+\begin{xample}
+\texhighdefshortverb\| \texhighdefshortverb!
+
+|\def\nrelax{not \relax}| !\def\nrelax{\relax not}!
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{function}[type=environment]{texhigh}
+  \begin{syntax}
+    \V*|\begin{texhigh}| \oarg{选项}
+    ~~~~...
+    \V*|\end{texhigh}|
+  \end{syntax}
+高亮环境内的内容。
+
+如果要基于它来定义环境，则需使用命令的形式：
+\begin{thverbatim}
+\NewDocumentEnvironment{myverb}{O{}}
+  {\texhigh[gobble=auto,#1]}
+  {\endtexhigh}
+\end{thverbatim}
+并且不能使用 \texttt{b} 参数。
+
+也可以将 \texttt{c} 参数与 \cs{texhighfile} 配合使用达到类似的效果，见\cref{eg:cmd-arg-c}。
+\end{function}
+
+\enlargethispage{10pt}
+\begin{xample}
+\ExplSyntaxOn
+\tl_set:Nn \l__my_filename_tl { ./ \jobname.texhigh.verb }
+\NewDocumentEnvironment{myverb}{c}
+  { \UseHook{end/texhigh/begin} }
+  {
+    \iow_open:Nn \g_tmpa_iow { \l__my_filename_tl }
+    \seq_set_split_keep_spaces:Nnn \l_tmpa_seq { \obeyedline } {#1}
+    \seq_map_tokens:Nn \l_tmpa_seq { \iow_now:Nn \g_tmpa_iow }
+    \iow_close:N \g_tmpa_iow
+    \texhighfile [gobble=auto] { \l__my_filename_tl }
+    \UseHook{end/texhigh/end}
+  }
+\ExplSyntaxOff
+
+\begin{myverb}
+  \def\foo{foo}
+  \show\foo
+\end{myverb}
+\stopxamplecode
+\xamplecode\label{eg:cmd-arg-c} \xampleline
+\xampletext
+\end{xample}
+
+
+\section{选项}
+
+\subsection{基本配置}
+
+本小节的选项都是用于设置 texhigh 的配置的。
+
+\begin{keyval}[path=high]{use-ctab}
+  \begin{syntax}
+    use-ctab = <catcode table> & document
+  \end{syntax}
+使用 \meta{catcode table} 来解析当前要高亮的代码。
+字符的类别码（catcode）不同，解析得到的 token 也不同。
+
+例如，使用 \tn{makeatletter} 会设置 \texttt{@} 的类别码为 11，这使得 \verb|\@firstofone|
+被解析为 \token{@firstofone} 这个控制序列，而使用 \LaTeX 正文中默认的类别码时，则会解析为
+控制序列 \token{@} 以及 \token[11]{f}\token[11]{i}\token[11]{r}\token[11]{s}\token[11]{t}\token[11]{o}\token[11]{f}\token[11]{o}\token[11]{n}\token[11]{e}。
+解析得到的 token 不同，高亮结果也会有所差异。
+
+\keyref*[high]{use-ctab} 就是用于设置解析时使用的类别码（更确切地说，是类别码表）。
+可用的值有 \prolist{document,latex,latexcode,latex3,latex3code,cjk,cjkl3,cjkcode,cjkl3code} 等，还可以使用自定义的类别码表，见\cref{sec:ctab}。
+
+\texttt{document} 和 \texttt{latex} 就是 \LaTeX 正文中默认使用的类别码表，
+\texttt{latexcode} 在 \texttt{latex} 的基础上还设置了 \texttt{@} 的类别码为 11。
+\texttt{latex3} 在 \texttt{latex} 的基础上使用 \cs{ExplSyntaxOn} 开启后的类别码。
+\texttt{latex3code} 在 \texttt{latex3} 的基础上还设置了 \texttt{@} 的类别码为 11。
+\texttt{cjk} 设置所有的 CJK 表意字符的类别码为 11。
+\texttt{cjkl3} 在 \texttt{cjk} 的基础上还设置了 \texttt{@} 的类别码为 11。
+\end{keyval}
+
+\begin{keyval}[path=high]{ctab-file}
+  \begin{syntax}
+    ctab-file = <ctabset files>
+  \end{syntax}
+解析 \meta{ctabset files} 中的类别码表。这使得 \keyref*[high]{use-ctab} 可以使用这些类别码表。文件结构见\cref{sec:ctab}。
+\end{keyval}
+
+\begin{keyval}[path=high]{config-file,config-file+}
+  \begin{syntax}
+    config-file  = <config files>
+    config-file+ = <config files>
+  \end{syntax}
+使用 \meta{config files} 设置的配置。若有重复的键，则只使用最后的那个。
+
+文件类型的为 \href{https://toml.io/}{TOML}，具体可用的配置见\cref{sec:config}。
+\end{keyval}
+
+\begin{keyval}[path=high]{gobble}
+  \begin{syntax}
+    gobble = <&auto|正整数> & 0
+  \end{syntax}
+每行最开始要忽略的字符数。如果为 \texttt{auto}，则忽略的字符数为第一行开始的空格数。
+\end{keyval}
+
+\begin{keyval}[path=high]{tabs-len}
+  \begin{syntax}
+    tabs-len = <正整数> & 2
+  \end{syntax}
+要把水平制表符替换为多少空格。
+\end{keyval}
+
+\begin{keyval}[path=high]{lines}
+  \begin{syntax}
+    lines = <行号>       & 0
+    lines = <开始, 结束>
+  \end{syntax}
+要高亮的代码行。为 \verb|0| 或 \verb|0,0| 时，高亮所有行，否则只高亮对应行（行号从 $1$ 开始），若为一个范围，则包括开始行，但不包括结束行。
+
+\keyref*[high]{gobble} 为 \texttt{auto} 时，只会检测保留下来的行。
+\end{keyval}
+
+\begin{keyval}[path=high]{filename}
+  \begin{syntax}
+    filename = <文件> & \V\jobname.texhigh.verb
+  \end{syntax}
+要高亮的文件。设置它时，会把 \keyref*[high]{cache-dir} 附加到它前面。
+
+使用 \env{texhigh} 环境时，会把代码保存到这个文件中。
+\end{keyval}
+
+\begin{keyval}[path=high]{cache-dir}
+  \begin{syntax}
+    cache-dir = <路径>
+  \end{syntax}
+设置缓存路径。如果是文件夹，则必须以 \texttt{/} 结尾，\pkg{texhigh} 不会自动附加 \texttt{/}。
+且必须手动创建该文件夹，\pkg{texhigh} \emph{不会}创建它们，如果没有创建该文件夹，则会出错。
+\end{keyval}
+
+\begin{keyval}[path=high]{output}
+  \begin{syntax}
+    output = <文件>
+  \end{syntax}
+把 texhigh 的处理结果保存至 \meta{文件} 中。设置它时，会把 \keyref*[high]{cache-dir} 附加到它前面。
+\end{keyval}
+
+\begin{keyval}[path=high]{no-ctabs}
+  \begin{syntax}
+    no-ctabs
+  \end{syntax}
+清除已经设置的类别码表和 \keyref*[high]{use-ctab} 的值。
+\end{keyval}
+
+\begin{keyval}[path=high]{no-configs}
+  \begin{syntax}
+    no-configs
+  \end{syntax}
+清除已经设置的配置。
+\end{keyval}
+
+\begin{keyval}[path=high]{enhanced}
+  \begin{syntax}
+    enhanced = <&\TTF> & true
+  \end{syntax}
+是否启用增强模式，增强模式有更多功能。默认启用。
+\end{keyval}
+
+\begin{keyval}[path=high]{banner}
+  \begin{syntax}
+    banner = <&\TTF> & false
+  \end{syntax}
+是否输出 texhigh 的版权信息。一般无需修改。
+\end{keyval}
+
+\begin{keyval}[path=high]{text-base64}
+  \begin{syntax}
+    text-base64 = <&\TTF> & true
+  \end{syntax}
+是否把 \cs{texhightext} 高亮的代码以 base64 编码后再传入 texhigh。默认启用。一般无需修改。
+\end{keyval}
+
+\begin{keyval}[path=high]{kpse}
+  \begin{syntax}
+    kpse = <&\TTF> & false
+  \end{syntax}
+是否使用 \texttt{kpathsea} 查找 \keyref*[high]{config-file} 使用的文件。启用它后，texhigh 会\emph{显著地}变慢。建议使用 \texttt{kpsewhich} 找到对应的文件后，将其复制到工作目录，或使用绝对路径，而不是使用该选项。
+\end{keyval}
+
+\subsection{样式选项}
+
+\begin{function}{\THSaveStyle}
+  \begin{syntax}
+    \V\THSaveStyle \marg{style} \marg{code}
+  \end{syntax}
+设置高亮风格。
+\end{function}
+
+\begin{function}{\THUseSavedStyle}
+  \begin{syntax}
+    \V\THUseSavedStyle \marg{style}
+  \end{syntax}
+使用由 \cs{THSaveStyle} 保存的风格。
+\end{function}
+
+\begin{keyval}[path=high]{style}
+  \begin{syntax}
+    style = <styles>
+  \end{syntax}
+使用由 \cs{THSaveStyle} 保存的风格。
+\end{keyval}
+
+\begin{keyval}[path=high]{line-number,linenos}
+  \begin{syntax}
+    line-number|linenos = <&\TTF> & false
+  \end{syntax}
+是否开启行号。
+\end{keyval}
+
+\begin{keyval}[path=high]{first-line-number,first-linenos}
+  \begin{syntax}
+    first-line-number|first-linenos = <起始行号>
+  \end{syntax}
+\pkg{texhigh} 每次高亮时不会重新设置行号，需要手动设置起始行号。
+\end{keyval}
+
+\begin{keyval}[path=high]{line-number-space,line-number-space+,line-number-space-}
+  \begin{syntax}
+    line-number-space  = <长度> & 3mm
+    line-number-space+ = <长度>
+    line-number-space- = <长度>
+  \end{syntax}
+设置（或增加，或减少）行号与代码之间的距离。
+\end{keyval}
+
+\begin{keyval}[path=high]{line-number-format}
+  \begin{syntax}
+    line-number-format = <code> & \V{\\scriptsize\\sffamily\ \#1}
+  \end{syntax}
+设置行号的格式。\verb|#1| 代表行号。
+
+一般情况下，它不必使用 \tn{arabic} 等命令，而由 \keyref*[high]{the-line-number} 修改。
+\end{keyval}
+
+\begin{keyval}[path=high]{the-line-number}
+  \begin{syntax}
+    the-line-number = <code> & \V{\\arabic\{TeXHighLine\}}
+  \end{syntax}
+修改 \texttt{TeXHighLine} 计数器的显示方式。\texttt{TeXHighLine} 用于保存当前行号。
+
+注意：\pkg{texhigh} 遇到新行时不会递增行号，只会在需要显示行号时才递增。
+\end{keyval}
+
+\begin{keyval}[path=high]{line-number-pos}
+  \begin{syntax}
+    line-number-pos = <&left|right|both> & both
+  \end{syntax}
+行号的位置。
+\end{keyval}
+
+\begin{keyval}[path=high]{line-kind}
+  \begin{syntax}
+    line-kind = <&enhanced|normal|none> & normal
+  \end{syntax}
+每个代码行的开始和结尾也可以自定义。默认情况下（\texttt{normal}），只会插入行号和换行。
+如果设置为 \texttt{enhanced}，则可以使用代码槽（socket）
+\socket{texhigh/start-line}、\socket{texhigh/between-line}、\socket{texhigh/end-line} 来添加代码。
+\end{keyval}
+
+\begin{function}[module=socket point,type=socket point]{texhigh/start-line,texhigh/between-line,texhigh/end-line}
+这三个代码槽（socket）会在指定位置执行。可通过 \cs{AssignSocketPlug} 来使用不同的插件（plug）。关于 socket 和 plug，见 \file{ltsockets-doc.pdf}。
+\end{function}
+
+\begin{function}{\texhigh@start@line}
+钩子，它后面紧跟当前代码行。可在 \socket{texhigh/start-line} 代码槽中修改该命令用以检测当前代码行。
+\end{function}
+
+\begin{xample}
+\makeatletter
+\ExplSyntaxOn
+\clist_const:Ne \c__my_comment_range_clist { \tl_to_str:n { comment, } }
+\cs_new:Npn \@detect@start@comment #1
+  {
+    \tl_if_eq:nnTF {#1} { \THrs }
+      { \@detect@start@comment@ }
+      { \texhigh@default@start@line #1 }
+  }
+\cs_new:Npn \@detect@start@comment@ #1
+  {
+    \clist_if_in:NoF \c__my_comment_range_clist
+      { \tl_to_str:n {#1} }
+      { \texhigh@default@start@line }
+    \THrs {#1}
+  }
+\ExplSyntaxOff
+\NewSocketPlug{texhigh/start-line}{detect-start-comment}
+  {\let\texhigh@start@line\@detect@start@comment}
+\THSaveStyle{line-number-skip-comment}{%
+  \SetKeys[texhigh/high]{line-kind=enhanced, linenos, first-linenos=1}%
+  \AssignSocketPlug{texhigh/start-line}{detect-start-comment}%
+}
+\makeatother
+
+\begin{texhigh}[style=line-number-skip-comment, gobble=auto]
+  Non-Comment Line
+  % A Comment Line
+  % B Comment Line
+  Non-Comment Line
+    % C Comment Line but spaces
+\end{texhigh}
+\stopxamplecode
+\SetKeys[texhigh/high]{lexer-catcode={explon,atletter}}
+\xampleprint
+\end{xample}
+
+\begin{keyval}[path=high]{left-space,left-space+,left-space-,
+  right-space,right-space+,right-space-}
+  \begin{syntax}
+    left-space  = <长度>
+    left-space+ = <长度>
+    left-space- = <长度>
+  \end{syntax}
+设置（或增加，或减少）代码距离文字左右两端的距离。
+\end{keyval}
+
+\begin{keyval}[path=high]{font,font+}
+  \begin{syntax}
+    font = <code> & \V{\ttfamily\raggedright}
+  \end{syntax}
+设置代码的字体。\pkg{texhigh} 还设置了 \verb|\linespread{1}|，可以在此选项内修改间距因子。
+\end{keyval}
+
+\begin{keyval}[path=high]{before-text,before-text+,extra-code,extra-code+}
+  \begin{syntax}
+    before-text = <code>
+    extra-code  = <code>
+  \end{syntax}
+在设置完所有选项后执行 \meta{code}。
+\end{keyval}
+
+\begin{keyval}[path=high]{before,before+,after,after+}
+  \begin{syntax}
+    before = <code>
+  \end{syntax}
+\end{keyval}
+
+钩子的执行顺序为 \meta{options} \meta{font} \meta{before-text} \meta{extra-code} \meta{before} \veta{highlighted code} \meta{after}。
+
+\begin{keyval}[path=high]{save-catcode}
+  \begin{syntax}
+    save-catcode
+    save-catcode = <code> &~
+  \end{syntax}
+用于保存当前的类别码。使用 \tn{@texhigh@reset@ctab} 可恢复到此处的类别码。\meta{code} 可以修改这个宏。默认情况下只会保存 \tn{dospecials} 里的字符的类别码。
+\end{keyval}
+
+\begin{function}{\texhighdefstyle}
+  \begin{syntax}
+    \V\texhighdefstyle   \marg{full path} \marg{options}
+    \V\texhighdefstyle   \oarg{module} \marg{path} \marg{options}
+    \V\texhighdefstyle * \marg{full path} \marg{code}
+    \V\texhighdefstyle * \oarg{module} \marg{path} \marg{code}
+  \end{syntax}
+自定义额外的选项。不带星号的，\meta{options} 为同一 \meta{module} 下的选项，带星号的 \meta{code} 为代码。\meta{options} 和 \meta{code} 都可使用一个参数，为该选项的值。
+
+\meta{module} 就是选项的灰色部分（不含末尾的 \texttt{/}）。
+例如，\keyref[high]{save-catcode} 的 \veta{module} 就是 \texttt{high}，
+\veta{path} 就是 \texttt{save-catcode}，\veta{full path} 就是 \texttt{high/save-catcode}。
+\end{function}
+
+例如，使用
+\begin{thverbatim}
+  \texhighdefstyle[high]{my option 1}{
+    first-line-number=1, line-number,
+    line-number-pos=left, line-number-space=5mm,
+  }
+  \texhighdefstyle*[high]{my len 1}{\def\mylen{#1}}
+\end{thverbatim}
+后，就可以在 \cs{texhighfile} 等命令或环境中使用 \texhighverb|\texhighfile[my option 1, my len 1=10]{..}| 了。
+
+\subsection{配置选项}
+
+配置选项基本都有对应的 texhigh 的命令行选项和配置文件中的键。
+它们当中有许多都是 texhigh 命令行选项的封装。
+
+\begin{keyval}[path=high]{break-at}
+  \begin{syntax}
+    break-at = <{字符列表}> & \V{\\\ }, \V{\\\^\^I}
+    break-at = \oarg{salt} \marg{字符列表}
+  \end{syntax}
+设置在哪些字符\emph{后}插入可断点。默认为空格和水平制表符。
+
+\meta{salt} 为唯一标识符，由字母、数字等组成。
+如果不给出 \meta{salt} 或两个 \meta{salt} 相同，则后面的那个会覆盖之前的。
+\end{keyval}
+
+\begin{keyval}[path=high]{char-replacements}
+  \begin{syntax}
+    char-replacements = \V\{ \meta{char}, ... \V\}
+    char-replacements = \V\{ \meta{char}=\meta{repr}, ... \V\}
+  \end{syntax}
+高亮时替换 \meta{char}，包括普通字符和控制序列名称\footnote{所谓控制序列名称就是除开转义符的其余部分，如 \tn{relax} 的名称就是 \texttt{relax}。}里的字符。
+
+可以用 \cs{THSetCharReplacement} 来修改 \meta{char} 要被替换为什么。
+例如，设置
+\begin{thverbatim}
+  char-replacements={\ =\textvisiblespace}
+\end{thverbatim}
+可以把空格替换为 \texttt{\textvisiblespace}（\tn{textvisiblespace}）。
+
+如果设置了 \meta{repr}，相当于隐式使用 \cs{THSetCharReplacement}。
+\end{keyval}
+
+\begin{function}{\THSetCharReplacement}
+  \begin{syntax}
+    \V\THSetCharReplacement   \marg{char} \marg{repr}
+    \V\THSetCharReplacement * \marg{char} \marg{repr}
+  \end{syntax}
+设置 \meta{char} 的替换文本，在显示 \meta{char} 是，会替换为 \meta{repr}。
+若使用\emph{不}带星号的版本，则还会使用 \tn{ifincsname} 判断是否在控制序列的名里，若是，则不替换。
+\end{function}
+
+\begin{keyval}[path=high]{this-cs}
+  \begin{syntax}
+    this-cs = <code>
+  \end{syntax}
+设置所有控制序列的样式。
+\end{keyval}
+
+\begin{xample}
+\def\thiscsstyle#1{{\THcolor{blue}#1}}
+\texhighverb[this-cs=\thiscsstyle]{\relax}
+
+\makeatletter
+\def\thiscsstyle@#1#2{{\THcolor{blue}#1\underline{#2}}}
+\def\thiscsstyle#1{\thiscsstyle@#1} % #1 为 {<escape char>}{<cs name>}
+\makeatother
+\texhighverb[this-cs=\thiscsstyle]{\relax}
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{keyval}[path=high]{escape-inside}
+  \begin{syntax}
+    escape-inside = <{命令}>
+    escape-inside = \meta{char_1}\meta{char_2}
+  \end{syntax}
+把 \meta{命令} 的参数“逃逸”（escape），或让 \meta{char_1} 和 \meta{char_2} 中间的内容“逃逸”。
+
+所谓“逃逸”，就是指让它们不高亮，而保留其原始形式。
+\end{keyval}
+
+\begin{xample}
+\begin{texhigh}[escape-inside=\E, escape-inside=&&]
+  The \E{\textbf{text}} will be &\itshape escaped&.
+  Even the \E{\verb|\relax|} works.
+\end{texhigh}
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{keyval}[path=high]{math-escape, comments-math-escape, non-comments-math-escape}
+  \begin{syntax}
+    math-escape
+    math-escape = <&(any)|in-comments|non-comments>
+    comments-math-escape &&
+    non-comments-math-escape &&
+  \end{syntax}
+\texttt{math-escape} 把 \verb|$ $| 和 \verb|\( \)| 中间的内容作为数学公式。
+值为 \texttt{in-comments} 时，它们需出现注释中才有效，
+为 \texttt{non-comments}，则不是出现在注释中才有效，
+为 \texttt{any} 则不做限制，这也是默认情形。
+\end{keyval}
+
+\begin{xample}
+\texhighverb[math-escape]{A \textit{cr} = $\rho \times \pi$ = \(\frac{N}{m}\)}.
+
+\begin{texhigh}[gobble=auto, comments-math-escape]
+  A \textit{cr} = $\rho \times \pi$ = \(\frac{N}{m}\)
+  % A \textit{cr} = $\rho \times \pi$ = \(\frac{N}{m}\)
+\end{texhigh}
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{keyval}[path=high]{texcomments,texcl}
+  \begin{syntax}
+    texcomments|texcl = <&\TTF> & false
+  \end{syntax}
+使整个注释像正常文本那样不高亮，直接输出。
+\end{keyval}
+
+\begin{xample}
+\begin{texhigh}[gobble=auto,texcomments]
+  A \textbf{normal} text.
+  % A \textbf{comment} text.
+\end{texhigh}
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{keyval}[path=high]{char-category*}
+  \begin{syntax}
+    char-category* = <{name}> <{regex}> <{style}>
+  \end{syntax}
+设置字符的类别及其样式。只对 token 为字符的才生效，不会影响控制序列名称里的字符。
+
+\meta{name} 为名字，\meta{regex} 为（纯文本）正则表达式（见\cref{sec:regex}），\meta{style} 可使用 1 个参数，为当前字符。
+
+当 \meta{style} 为 \cs{THPASS} 这个特殊值时，只设置类别而不修改样式，如果你已经定义了样式，而不想修改它，可以使用这个特殊值。
+\end{keyval}
+
+\begin{xample}
+\texhighverb[char-category*={symbol}{[\ \$\&]}{\mbox{\THcolor{red}#1}}]
+  |\def\a #1{$#1$} \a {\ b&\&}|
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{xample}
+\THSetCharReplacement{\ }{\textvisiblespace} % texhigh 已设置
+\THSetCharReplacement{\$}{\S} % 把 $ 替换为 \S
+\texhighverb[char-replacements={\ \$}, % 设置哪些字符要替换
+  char-category*={symbol}{[\ \$\&]}{\mbox{\color{red}#1}}, % 修改颜色
+] |\def\a #1{$#1$} \a {\ b&\&}|
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{keyval}[path=high]{char-category}
+  \begin{syntax}
+    char-category = <&options..>
+  \end{syntax}
+设置字符的类别。\meta{options} 是（多个）可选值。目前 \pkg{texhigh} 没有提供任何可选值。
+\end{keyval}
+
+\begin{xample}
+\texhighdefstyle[high]{char-category/my symbol}
+  % 注意这里要用 ##1，因为 #1 代表 “my symbol”
+  {char-category*={symbol}{[\ \$\&]}{\mbox{\THcolor{red}##1}}}
+
+\texhighverb[char-category=my symbol]{\def\a #1{$#1$} \a {\ b&\&}}
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\begin{function}{\THSetCH,\THLetCH}
+  \begin{syntax}
+    \V\THSetCH \marg{name} \marg{code with 1 arg}
+    \V\THLetCH \marg{name_1} \marg{name_2}
+  \end{syntax}
+设置字符的类别为 \meta{name} 的样式。或把 \meta{name_2} 样式复制给 \meta{name_1}。
+
+\meta{code} 可使用 1 个参数，为当前字符。
+
+\keyref*[high]{char-category*} 内部就是使用该命令。\cs{THPASS} 在此处无效。
+\end{function}
+
+\begin{keyval}[path=high]{cs-category,cs-category*}
+  \begin{syntax}
+    cs-category  = <{name}> <{cs name list}> <{style}>
+    cs-category* = <{name}> <{regex}> <{style}>
+  \end{syntax}
+设置控制序列的类别及其样式。
+
+\meta{name} 为名字，\meta{cs name list} 为控制序列名称列表，\meta{regex} 为（纯文本）正则表达式（见\cref{sec:regex}），\meta{style} 可使用 2 个参数，分别为转义符和控制序列名。
+
+当 \meta{style} 为 \cs{THPASS} 这个特殊值时，只设置类别而不修改样式，如果你已经定义了样式，而不想修改它，可以使用这个特殊值。
+\end{keyval}
+
+\begin{function}{\THSetCS,\THLetCS}
+  \begin{syntax}
+    \V\THSetCS \marg{name} \marg{code with 2 args}
+    \V\THLetCS \marg{name_1} \marg{name_2}
+  \end{syntax}
+设置控制序列的类别为 \meta{name} 的样式。或把 \meta{name_2} 样式复制给 \meta{name_1}。
+
+\meta{code} 可使用 2 个参数，分别为转义符和控制序列名。比如控制序列 \token{relax}，
+转义符为 “\texttt\textbackslash”，控制序列名为 “\texttt{relax}”。
+
+\keyreflist*[high]{cs-category,cs-category*} 内部就是使用该命令。\cs{THPASS} 在此处无效。
+\end{function}
+
+\begin{keyval}[path=high]{lexer,lexer*}
+  \begin{syntax}
+    lexer* = \marg{lexer cat_{start}} \marg{lexer cat_{end}} \marg{ctabs} \marg{action} \marg{value_{action}}
+    lexer* = \oarg{salt} \marg{lexer cat_{start}} \marg{lexer cat_{end}} \marg{ctabs} \marg{action} \marg{value_{action}}
+    lexer  = <&options..>
+  \end{syntax}
+用于设置如何解析要高亮的代码。
+
+传递给 texhigh 的并非是 {\TeX} tokens，而是纯文本。由于 \TeX 是上下文有关的，
+解析得到的 tokens 会根据前文不同而不同。在静态解析时，无法自动应用宏执行过程时触发的各类效果，
+如类别码发生改变等等都不会被 texhigh 检测到。
+为此，texhigh 支持通过检测当前所处的上下文来半自动应用宏执行后产生的效果。
+
+\meta{lexer cat} 为触发 lexer 改变的条件。可以是纯文本、正则表达式、\TeX 正则表达式、位置（行、列号）等。正则表达式和 \TeX 正则表达式检测的内容为当前位置之前的所有符号。
+
+每种 \meta{action} 对应 \meta{value} 的形式也不同。可用的 \meta{action} 为：
+\begin{description}
+  \item[\texttt{CatCode}] 修改类别码。\meta{value} 为类别码表名或 \meta{char}\texttt{=}\meta{catcode} 构成的列表。
+  \item[\texttt{EndLine}] 修改行结束时插入的字符。\meta{value} 为数字。
+\end{description}
+\end{keyval}
+
+\begin{keyval}[path=high]{lexer-catcode,lexer-catcode*,extra-catcode*}
+  \begin{syntax}
+    lexer-catcode* = \marg{lexer cat_{start}} \marg{lexer cat_{end}} \marg{value}
+    lexer-catcode  = <&options..>
+    extra-catcode* = \marg{value}
+  \end{syntax}
+\keyref*[high]{lexer*} 的 \meta{action} 为 \texttt{CatCode} 的特例。
+
+\key{extra-catcode} 是 \meta{lexer cat_{start}} 为 \texttt{0}，\meta{lexer cat_{end}} 为空的特例，相当于整个代码段都使用 \meta{value}。
+\end{keyval}
+
+\begin{keyval}[path=high]{no-lexer}
+  \begin{syntax}
+    no-lexer &&
+  \end{syntax}
+清除当 \meta{salt} 为空（或未设置）时的 \keyref*[high]{lexer*} 所设置的 lexer。
+\end{keyval}
+
+\begin{keyval}[path=high]{enabled-ranges,enabled-ranges+,remove-enabled-ranges,remove-enabled-ranges+}
+  \begin{syntax}
+    enabled-ranges = \marg{range name list}
+    remove-enabled-ranges = \marg{range name list}
+  \end{syntax}
+texhigh 通过 range 机制检测命令的参数。range 就是一个特殊的代码片段，
+可为不同的代码片段设置不同的样式。设置 range 并不会一定会启用它，texhigh 只会
+启用指定的 range，这样可用把需要的 range 先写在配置文件中，然后按需启用。
+\end{keyval}
+
+\begin{keyval}[path=high]{range}
+  \begin{syntax}
+    range = \marg{full name} \marg{range actions}
+  \end{syntax}
+创建并\emph{启用} \meta{full name}。
+
+range 可以分为普通代码段和逃逸代码段。普通代码段会被高亮，可以为其单独设置样式，也支持检测参数。
+逃逸代码段不会被高亮，而会直接执行。
+同一个 \meta{full name} 只能使用其中的一种，要么是普通代码段，要么是逃逸代码段。
+不过，\meta{full name} 支持一种特殊的语法，当它为
+\texttt{+}\marg{salt}\meta{real name} 时，
+texhigh 认为其名为 \meta{real name}，同时 \keyref*[high]{enabled-ranges} 也可以只用
+\meta{real name}，texhigh 会启用所有 \meta{full name}，
+只要其 \meta{real name} 包含在 \keyref*[high]{enabled-ranges} 中。
+\end{keyval}
+
+\meta{range actions} 也为键值选项，其 \meta{module} 为 \texttt{high/range-config}：
+\begin{keyval}[path=high/range-config]{escape}
+  \begin{syntax}
+    escape = <&\TTF> &! false
+  \end{syntax}
+是否为逃逸代码段。
+\end{keyval}
+
+\begin{keyval}[path=high/range-config]{start,start*}
+  \begin{syntax}
+    start  = \marg{range cat}  &!
+    start* = \marg{range cat*} &!
+  \end{syntax}
+此 range 何时开始。\meta{range cat} 为纯文本或正则表达式或 \TeX 正则表达式。检测的内容为当前位置及其后的所有内容。
+\end{keyval}
+
+\begin{keyval}[path=high/range-config]{arguments}
+  \begin{syntax}
+    arguments = \marg{arguments} &!
+  \end{syntax}
+\meta{arguments} 为 \pkg{ltcmd}（\pkg{xparse}）的参数，参数数目最多为 9 个。
+
+\meta{argument} 包括 \texttt{m o O d D r R s t v} 以及 \texttt{l u g G}
+暂不支持 \texttt{e E c b}，并且 \texttt{! + = >} 也是无效的。
+此外，还支持一个特殊的符号 \verb|^^J|，它用于捕获当前行剩下的内容，带一个参数，
+表示是否要求大括号成对存在。
+\end{keyval}
+
+\begin{keyval}[path=high/range-config]{remove-start}
+  \begin{syntax}
+    remove-start = <&\TTF> &! false
+  \end{syntax}
+移除该代码段的 \meta{start} 部分。仅为逃逸代码段时有效。
+\end{keyval}
+
+\begin{keyval}[path=high/range-config]{insert-brace}
+  \begin{syntax}
+    insert-brace = <&\TTF> &! false
+  \end{syntax}
+把该代码段的参数用一对 \texttt{\{ \}} 括起来。仅为逃逸代码段时有效。
+\end{keyval}
+
+\begin{keyval}[path=high/range-config]{use-argument}
+  \begin{syntax}
+    use-argument = <&\TTF> &! false
+  \end{syntax}
+移除参数最外层的括号或定界符。仅为逃逸代码段时有效。
+\end{keyval}
+
+\begin{keyval}[path=high/range-config]{insert-ending}
+  \begin{syntax}
+    insert-ending = <&\TTF> &! false
+  \end{syntax}
+若最后那个参数类型为 \texttt{u}、\texttt{U} 或 \texttt{\Verbatimize{\^\^J}} 时，
+把标记参数结尾的符号移动到该代码段的后面。
+若为逃逸代码段，则还需 \keyref*[high/range-config]{use-argument} 为 \texttt{true}。
+
+例如，当使用参数 \texttt{\Verbatimize{\^\^J}} 时，标记该参数结尾的符号为换行符，
+设置该选项为真时，会把该换行符移动到该代码段的后面，这样 texhigh 才能正确检测行的结束。
+\end{keyval}
+
+\begin{keyval}[path=high/range-config]{in-comments}
+  \begin{syntax}
+    in-comments = <&required|never|any> &! any
+  \end{syntax}
+是否仅在注释内才检测该 range。
+
+\def\,{\hskip.16667em\relax}
+值为 \texttt{required\,/\,must\,/\,true} 要求必须在注释内，
+值为 \texttt{forbidden\,/\,never\,/\,prohibited\,/\,false} 要求不能在注释内，
+值为 \texttt{irrelevant\,/\,any\,/\,dontcare} 则不做限制。
+\end{keyval}
+
+\begin{keyval}[path=high/range-config]{start-is-arg}
+  \begin{syntax}
+    start-is-arg = <&\TTF> &! false
+  \end{syntax}
+检测参数时是否包括 \meta{start}。
+\end{keyval}
+
+\begin{keyval}[path=high/range-config]{args-numbered}
+  \begin{syntax}
+    args-numbered = <&\TTF> &! false
+  \end{syntax}
+texhigh 把每个参数都作为单独的一个 range，名为 \texttt{argument.}\meta{arg type} 或
+\texttt{argument.}\meta{arg pos}，默认为前者，若
+\keyref*[high/range-config]{args-numbered} 为真时，则使用后者。
+
+\meta{arg type} 为参数类型，如 \texttt{m}、\texttt{D} 等，
+\meta{arg pos} 为参数的位置，如 1、2、9 等，从 1 开始，最多为 9。
+\end{keyval}
+
+\begin{keyval}[path=high/range-config]{skip-if-pre,skip-if-post}
+  \begin{syntax}
+    skip-if-pre  = <{regex}> &!
+    skip-if-post = <{regex}> &!
+  \end{syntax}
+在寻找完该 range 的参数后，若该 range 之前（或之后）的内容匹配 \meta{regex}，则跳过该 range，继续寻找可能的 range。
+\end{keyval}
+
+\begin{function}{\THSetRange}
+  \begin{syntax}
+    \V\THSetRange \marg{range name}   \marg{start code}\oarg{end code}
+    \V\THSetRange \marg{range name}   \oarg{range action} \marg{start code}\oarg{end code}
+    \V\THSetRange \marg{range name} * \marg{start code}\oarg{end code}
+    \V\THSetRange \marg{range name} * \oarg{range action} \marg{start code}\oarg{end code}
+  \end{syntax}
+设置 range 及其样式。
+
+若不给出 \meta{range action}，则只修改样式，否则还会创建并启用该 range。
+
+\emph{不}带星号的版本会在 \meta{start code} 之前加上 \tn{begingroup} 以及 \tn{@texhigh@reset@ctab}，在 \meta{end code} 之后加上 \tn{endgroup}。
+\end{function}
+
+\begin{function}{\THSetRS,\THSetRE,\THSetES,\THSetEE,\THLetRS,\THLetRE,\THLetES,\THLetEE}
+  \begin{syntax}
+    \V\THSetRS \marg{range name} \marg{start code}
+    \V\THSetRE \marg{range name} \marg{end code}
+  \end{syntax}
+设置普通代码段和逃逸代码段的样式。代码段像环境一样，可以分别设置开始和结尾要执行的代码。
+
+\cs{THSetRange} 就是同时设置普通代码段和逃逸代码段的样式。
+\end{function}
+
+\begin{function}{\THCollectRange}
+  \begin{syntax}
+    \V\THCollectRange \marg{do code} \V\THrs \meta{text code} \V\THre
+    \V\THCollectRange \marg{do code} \V\THes \meta{text code} \V\THee
+  \end{syntax}
+收集普通代码段或逃逸代码段。\meta{do code} 后面紧跟着 \marg{text code}。
+\end{function}
+
+\begin{function}{\THPASS}
+特殊的标记。
+\end{function}
+
+\begin{keyval}[path=high]{__config, __config*}
+  \begin{syntax}
+    __config  = \marg{raw key} \marg{raw value}
+    __config* = \marg{raw key} \marg{raw value}
+  \end{syntax}
+设置配置。尽量不要使用它们。
+\end{keyval}
+
+\subsection{类别码表}\label{sec:ctab}
+
+类别码表由方括号括起来的表名和 \meta{chars}\texttt{=}\meta{catcode} 组成。
+
+预定义的类别码表位于 texhigh-rs 的\href{https://github.com/Sophanatprime/texhigh-rs}{仓库}的 \href{https://github.com/Sophanatprime/texhigh-rs/blob/main/src/prelude-ctabset.thcs}{\texttt{prelude-ctabset.thcs}} 内。
+
+\subsection{配置文件}\label{sec:config}
+
+配置文件的格式为 \href{https://toml.io/}{TOML}。
+
+texhigh-rs 的\href{https://github.com/Sophanatprime/texhigh-rs}{仓库}里 \href{https://github.com/Sophanatprime/texhigh-rs/blob/main/src/prelude-config.toml}{\texttt{prelude-config.toml}} 给出了一个完整的配置文件。
+
+\subsection{token 的分类}
+
+texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可设置不同的类别（\veta{category}），其中可设置样式的类型有：
+\begin{description}\raggedright
+\item[\texttt{bp}] 可断点；主要有两个类别：\texttt{cs} 和 \texttt{char}，\texttt{cs} 的断点在控制序列前插入，\texttt{char} 在字符后插入；
+\item[\texttt{cs}] 控制序列；除了由 \keyref*[high]{cs-category} 等设置之外，还有
+  \prolist[、]{latex3.primitive,latex3.function.internal,latex3.function.public,latex3.function.kernel,latex3.variable.internal,latex3.variable.public,latex3.variable.kernel,latex.programming,latex.internal,latex.document,primitive.knuthtex,primitive.etex,primitive.pdftex,primitive.xetex,primitive.luatex,primitive.uptex,primitive.widely,primitive.sometex,primitive.luametatex}；
+\item[\texttt{ch}] 字符；除了由 \keyref*[high]{char-category} 等设置之外，对于组开始符和组结束符，有类别：\texttt{group.\-\meta{group level}}；对于其它类别码不为 11 及 12 的字符，有类别：\texttt{catcode.\meta{catcode}}；
+\item[\texttt{rs}] 普通代码段的开始；除了由 \keyref*[high]{range} 设置的之外，还有 \prolist[、]{math.inline,comment}；
+\item[\texttt{re}] 普通代码段的结束；同 \texttt{rs}；
+\item[\texttt{st}] 文本；它仅包含类别码为 10、11、12 的字符；
+\item[\texttt{es}] 逃逸代码段的开始；
+\item[\texttt{ee}] 逃逸代码段的结束；
+\item[\texttt{pn}] 标点。
+\end{description}
+它们都有对应的 \cs{THSet\meta{class}} 和 \cs{THLet\meta{class}} 命令用于设置样式，
+其中 \meta{class} 需大写，如 \cs{THSetCS}。
+
+\begin{function}{\THSetBP,\THLetBP,\THSetST,\THLetST,\THSetPN,\THLetPN}
+  \begin{syntax}
+    \V\THSetBP \marg{name} \marg{code}
+    \V\THSetST \marg{name} \marg{code with 1 arg}
+    \V\THSetPN \marg{name} \marg{code with 1 arg}
+  \end{syntax}
+设置对应类型的样式。
+\end{function}
+
+\begin{function}{\THRemoveClass,\THRemoveClasses}
+  \begin{syntax}
+    \V\THRemoveClass \marg{class} \marg{name list}
+    \V\THRemoveClasses \marg{class list}
+  \end{syntax}
+\cs{THRemoveClass} 删除类型为 \meta{class} 的名为 \meta{name} 的样式。
+\cs{THRemoveClasses} 删除类型为 \meta{class} 的除“\texttt{?}”之外的所有样式。
+\end{function}
+
+\begin{function}{\THSetFallback}
+  \begin{syntax}
+    \V\THSetFallback \marg{class} \marg{name} \marg{fallback names}
+  \end{syntax}
+如果 \meta{class} 的没有设置名为 \meta{name} 的样式，则依次使用 \meta{fallback names} 中的样式，如果它们都未设置，则使用“\texttt{?}”样式。
+\end{function}
+
+
+\section{辅助命令}
+
+本节的命令一般可在设置样式时使用。
+
+\begin{function}{\THcolor,\THColorStatus}
+  \begin{syntax}
+    \V\THcolor \marg{颜色表达式}
+    \V\THcolor \oarg{色彩模式} \marg{color spec}
+    \V\THColorStatus \marg{status}
+  \end{syntax}
+设置文本和填充的颜色。
+与 \pkg{xcolor} 的 \tn{color} 命令相比，\cs{THcolor} 可以通过设置 \meta{status} 来启用或取消设置该颜色，如果 \meta{status} 为 0，则不设置颜色，否则设置对应颜色。
+\end{function}
+
+\begin{function}[EXP]{\texhigh@fallback,\texhigh@fallback@}
+  \begin{syntax}
+    \V{\texhigh@fallback}  \marg{class} \marg{name}
+    \V{\texhigh@fallback@} \marg{class} \marg{name}
+  \end{syntax}
+这两个命令展开为没有发现名为 name 的样式时，要使用的样式。
+
+\cs{texhigh@fallback@} 已经查找了其 fallback 列表中的样式，\cs{texhigh@fallback} 则还没有查找 fallback 列表。可以修改它们以使用不同的 fallback 策略。它们\emph{必须完全可展}。
+\end{function}
+
+\begin{function}[EXP]{\texhigh@cat@if@exists,\texhigh@cat@fallback}
+  \begin{syntax}
+    \V{\texhigh@cat@if@exists} \marg{class} \marg{cat name} \marg{true} \marg{false}
+    \V{\texhigh@cat@fallback} \marg{class} \marg{cat name} \marg{false}
+  \end{syntax}
+\cs{texhigh@cat@if@exists} 检测 \meta{class} 是否有名为 \meta{cat name} 的样式。
+\cs{texhigh@cat\-@fallback} 查找 \meta{class} 的 \meta{cat name} 的 fallback 列表，
+展开为样式存在时的样式名，若这些样式都不存在，则使用 \meta{false}。
+\end{function}
+
+\begin{function}[EXP]{\texhigh@find@dotparent,\texhigh@dot@split}
+  \begin{syntax}
+    \V{\texhigh@dot@split} \marg{name}
+    \V{\texhigh@find@dotparent} \marg{name}
+  \end{syntax}
+\cs{texhigh@dot@split} 把 \meta{name} 分成两份，第一份为最后一个句点之前的内容，第二份为最后一个句点之后的内容。这两份都用 \cs{exp_not:n} 保护起来。
+\cs{texhigh@find@dotparent} 则只保留第一份。
+\end{function}
+
+\begin{xample}
+\makeatletter
+\def\printstr#1{\detokenize\expandafter{\expanded{#1}}}
+\printstr{\texhigh@dot@split {\a.b.c.\d}}\quad
+\printstr{\texhigh@find@dotparent {\a.b.c.\d}}\quad
+\makeatother
+\stopxamplecode
+\SetKeys[texhigh/high]{extra-catcode*=atletter}
+\xampleprint
+\end{xample}
+
+\begin{xample}
+\makeatletter\ExplSyntaxOn
+% 让它依次检测该样式的“父样式”，即最后一个句点之前的内容
+% 如对于 a.b.c.d，会依次检测 a.b.c，a.b 和 a，若都不存在则使用 ?
+% 我们修改 \texhigh@fallback@ 而非 \texhigh@fallback，这样它会首先检测 fallback 列表
+\cs_set:Npn \texhigh@fallback@ #1#2
+  { \__my_texhigh_fallback_dot:ne {#1} { \texhigh@find@dotparent {#2} } }
+\cs_new:Npn \__my_texhigh_fallback_dot:nn #1 #2
+  {
+    \tl_if_empty:nTF {#2} { ? }
+      {
+        \texhigh@cat@if@exists {#1} {#2} {#2}
+          { \__my_texhigh_fallback_dot:ne {#1} { \texhigh@find@dotparent {#2} } }
+      }
+  }
+\cs_generate_variant:Nn \__my_texhigh_fallback_dot:nn { ne }
+\ExplSyntaxOff\makeatother
+
+\THRemoveClass{cs}{primitive.knuthtex}
+\THSetFallback{cs}{primitive.knuthtex}{unknown-foo}
+\THSetCS{primitive}{\mbox{\THcolor{blue}\bfseries #1#2}}
+\texhighverb|\def|
+\stopxamplecode
+\SetKeys[texhigh/high]{extra-catcode*=atletter,extra-catcode*=explon}
+\xampleprint
+\end{xample}
+
+\begin{function}{\@texhigh@reset@ctab,\@texhigh@reset@font}
+钩子，分别用于重设类别码和字体。
+\end{function}
+
+\begin{function}{\@texhigh@rescan@lines}
+  \begin{syntax}
+    \V{\@texhigh@rescan@lines} \marg{balanced tokens}
+    \V{\@texhigh@rescan@lines} \meta{token} \meta{tokens} \meta{token}
+  \end{syntax}
+重新扫描 \meta{tokens}，可使得 \tn{verb} 等命令生效。
+和 \tn{verb} 一样，\meta{tokens} 不能作为命令的参数。
+\end{function}
+
+\begin{function}{\@texhigh@underline}
+  \begin{syntax}
+    \V{\@texhigh@underline} \marg{text}
+  \end{syntax}
+给不可断行的 \meta{text} 加上下划线，该下划线的长度比 \meta{text} 的略短。
+\end{function}
+
+\begin{function}{\@texhigh@shadetext}
+  \begin{syntax}
+    \V{\@texhigh@shadetext} \marg{tikz options} \marg{text}
+  \end{syntax}
+给 \meta{text} 加上阴影或底纹。\meta{tikz options} 一般包含创建阴影或类似的选项，如 \texttt{left color=red, right color=blue} 或 \texttt{fill stretch image=image.png} 等。
+
+需自行加载 \pkg{tikz} 宏包，或启用 \pkg{texhigh} 的 \texttt{tikz} 宏包选项。
+\end{function}
+
+\begin{function}[EXP]{\texhigh@replicate}
+  \begin{syntax}
+    \V{\texhigh@replicate} \marg{num} \marg{code}
+  \end{syntax}
+重复 \meta{code} \meta{num} 次。
+\end{function}
+
+\begin{function}{\texhigh@pdfliteral}
+  \begin{syntax}
+    \V{\texhigh@pdfliteral} \marg{pdf literal}
+  \end{syntax}
+\meta{pdf literal} 会被完全展开。
+\end{function}
+
+\begin{function}{\THmB,\THmC,\THmD,\THmH,\THmN,\THmP,\THmR,\THmS,\THmT}
+特殊的标记：
+\raisebox{\baselineskip}{\ttfamily
+\begin{tabular}[t]{*{9}{c}}\toprule
+  \V\THmB&\V\THmC&\V\THmD&\V\THmH&\V\THmN&\V\THmP&\V\THmR&\V\THmS&\V\THmT\\
+  \V\\&\V\^&\V\$&\V\#&\V{\^\^J}&\V\%&\V{\^\^M}&\meta{space}&\meta{tab}\\\bottomrule
+\end{tabular}}
+\end{function}
+
+\section{正则表达式}\label{sec:regex}
+
+这里的正则表达式指的是纯文本正则表达式（简写为 \veta{regex}），也就是只对纯文本生效，此外还有 \TeX 正则表达式（简写为 \veta{regtex}），只对 tokens 生效，见\cref{sec:regtex}。
+
+纯文本正则表达式的语法见 \url{https://docs.rs/regex/latest/regex/#syntax}。
+
+
+\section{\TeX 正则表达式}\label{sec:regtex}
+
+\TeX 正则表达式是作用于 {\TeX} tokens 的正则表达式，\pkg{l3regex} 就是此类。
+与普通的正则表达式相比，它多了检测 token 的转义序列，例如 \verb|\c{relax}| 检测 token
+是否为 \token{relax}，只有 \token{relax} 才匹配此转义序列，普通正则表达式就做不到这一点。
+
+texhigh 支持的 \veta{regtex} 的语法和 \pkg{l3regex} 很相似，但暂不支持
+\verb|\b| \verb|\B| \verb|\G| \verb|\u| 这几个转义序列，
+以及 \verb|\c| 转义序列的否定形式（即暂不支持 \verb|[^\c{begin}\c{end}]| 这类用法）。
+
+
+\section{高亮原理}
+
+\pkg{texhigh} 高亮代码有两步，首先把原始的代码传递给 texhigh 命令行工具，
+它解析 \TeX 代码，检测 token 的分类以及类别，输出为特殊的 \TeX 代码，除了逃逸代码段外，
+只有有限的几个控制序列：{\makeatletter\prolist[、][\@firstofone]{\cs{THls},\cs{THle},\cs{THin},\cs{THcr},\cs{THbp},\cs{THcs},\cs{THch},\cs{THrs},\cs{THre},\cs{THst},\cs{THes},\cs{THee},\cs{THpn}}}，一般情况下不应重定义它们。然后根据这几个控制序列的参数不同得到不同的样式。
+
+
+\section{实验特性}
+
+\subsection{计算文字布局}
+
+使用本节所述的特性需自行加载 \pkg{fontspec} 宏包。
+
+texhigh 有 \cs{kaomoji} 命令用于排布文字，文字的显示效果部分取决于系统拥有的字体和所设置的字体。
+\begin{function}{\kaomoji}
+  \begin{syntax}
+    \V\kaomoji   \marg{options} \marg{plain text}
+    \V\kaomoji * \marg{options} \marg{plain text} \marg{image command}
+  \end{syntax}
+不带星号的命令会由 texhigh 计算布局（包括文字位置、字体等）再使用 \TeX 排版出来，由 \TeX 输出文字。
+而带星号的命令由 texhigh 排版 \meta{plain text}，将其输出为图片，\TeX 只负责导入该图片。
+
+\meta{image command} 是加载图片的命令，如 \tn{includegraphics}\marg{options} 等。
+\end{function}
+
+\begin{keyval}[path=layout]{system-fonts}
+  \begin{syntax}
+    system-fonts = <&\TTF> & true
+  \end{syntax}
+是否使用系统字体。
+\end{keyval}
+
+\begin{keyval}[path=layout]{fonts,fonts+}
+  \begin{syntax}
+    fonts = <{font list}>
+  \end{syntax}
+设置文字可用的字体。
+\end{keyval}
+
+\begin{keyval}[path=layout]{fontsize,fontsize*}
+  \begin{syntax}
+    fontsize  = <{dim}>
+    fontsize* = <{fontsize command}>
+  \end{syntax}
+设置字体大小。
+\end{keyval}
+
+\begin{keyval}[path=layout]{lineheight}
+  \begin{syntax}
+    lineheight = <{dim}>
+  \end{syntax}
+设置行高。
+\end{keyval}
+
+\begin{keyval}[path=layout]{force}
+  \begin{syntax}
+    force = <&\TTF> & true
+  \end{syntax}
+使用图片模式时，当图片已经存在时是否重新生成。
+\end{keyval}
+
+\begin{keyval}[path=layout]{cache-dir}
+  \begin{syntax}
+    cache-dir = <{directory}>
+  \end{syntax}
+同 \keyref*[high]{cache-dir}。
+\end{keyval}
+
+\setuplayout{preset=balance}
+\printindex[docchange]
+\printindex[docusage]
+
+\end{document}

@@ -143,7 +143,7 @@ texhigh 除了可用于高亮 \TeX 文件，还支持计算文字的布局。
 类型不可改变，而“类别”可以自由修改。
 
 每个类型都有一些命令用于更改它们的“类别”的显示效果，如，对于一个控制序列，可以使用
-\texhighverb|\THSetClassCS| 改变显示效果。可以为它们设置前景色、背景色，
+\texhighverb|\THSetCS| 改变显示效果。可以为它们设置前景色、背景色，
 甚至渐变色和底纹等等。实际上普通文字可以显示成什么效果，它们就可以做到同样的效果。
 具体修改方式可以参考文末 \texttt{basic} 样式的源码。
 
@@ -501,7 +501,7 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
   {\bfseries \texhigh@underline}
 \THSetRange{[node]tikz-keywords}[tikz-keyword=node]{\bfseries\texhigh@underline}
 \makeatother
-\THSetClassCS[]{tikzcs}{\mbox{\THcolor{blue}\bfseries #1#2}}
+\THSetCS[]{tikzcs}{\mbox{\THcolor{blue}\bfseries #1#2}}
 
 \begin{texhigh}[gobble=auto,
   cs-category={tikzcs}{draw,fill,filldraw,path,node,coordinate}{\THPASS},
@@ -551,7 +551,7 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
       {\texhightext[remove-enabled-ranges={mycomment}]{#1}}%
     % 如果是类别码为 14 且为是第一个“%”就换回 “//\THmS”
     \def\firstComment#1{\if#1\THmP\relax //\THmS \def\firstComment{}\else #1\fi}%
-    \THSetClassCH[]{catcode.14}{\firstComment{#1}}%
+    \THSetCH[]{catcode.14}{\firstComment{#1}}%
     \normalfont \mycommentverb}
 \begin{texhigh}[gobble=auto, escape-inside=||]
   The |\LaTeX| % comment can be |\emph{highlighted}|.
@@ -590,8 +590,8 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
   [start={\I^<@@=}, escape, arguments=u{>}, remove-start]
   { \ensuremath{\langle} \__this_atat_format:w }
   [ \ensuremath{\rangle} ]
-\THSetClassCS[]{atat-i}{ \__this_atat_cs_internal:nn {#1} {#2} }
-\THSetClassCS[]{atat-p}{ \__this_atat_cs_public:nn {#1} {#2} }
+\THSetCS[]{atat-i}{ \__this_atat_cs_internal:nn {#1} {#2} }
+\THSetCS[]{atat-p}{ \__this_atat_cs_public:nn {#1} {#2} }
 \ExplSyntaxOff
 
 \begin{texhigh}[gobble=auto, use-ctab=latex3code,
@@ -672,7 +672,10 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
 
 \boxdes{\cs{THCollectRange}\marg{do code} \cs{THrs}\marg{range id}\texttt{...}\cs{THre}\marg{range id}}
 
+\vspace{5pt}
+
 \boxdes{\cs{THCollectRange}\marg{do code} \cs{THes}\marg{escape id}\texttt{...}\cs{THee}\marg{escape id}}
+
 
 其中 \meta{do code} 可以使用 3 个参数，第一个为 range/escape 的 id，第二个为 range/escape 的内容，第三个为 range/escape 的原始内容。
 
@@ -722,9 +725,14 @@ texhigh 支持的 \TeX 正则表达式语法和 \textsf{l3regex} 基本一致，
 
 \vspace{1cm}
 \noindent\texhighverb|%%%---- File: texhigh.prelude.ths ----%%%|
-\IfFileExists{texhigh.prelude.ths.tex}
-  {\texhighfile[use-ctab=latexcode]{texhigh.prelude.ths.tex}}
-  {\texhighfile[use-ctab=latexcode]{texhigh.prelude.ths}}
+\IfFileExists{./texhigh.prelude.ths.tex}
+  {\def\texhighfilename{./texhigh.prelude.ths.tex}}
+  {\IfFileExists{../texhigh.prelude.ths.tex}
+    {\def\texhighfilename{../texhigh.prelude.ths.tex}}
+    {\IfFileExists{./texhigh.prelude.ths}
+      {\def\texhighfilename{./texhigh.prelude.ths}}
+      {\def\texhighfilename{../texhigh.prelude.ths}}}}
+\texhighfile[use-ctab=latex3code]{\texhighfilename}
 
 % \newpage
 % \newgeometry{hmargin=1cm, top=1.5cm, bottom=1.2cm}

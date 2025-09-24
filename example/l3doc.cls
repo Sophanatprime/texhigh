@@ -450,17 +450,17 @@
       } ,
   }
 \THSaveStyle{codedoc}{
-  \THSetClassCS{latex3.primitive}{\mbox{\THcolor{red4}\bfseries \__codedoc_texhigh_link:n {#2}}}%
-  \THSetClassCS{latex3.kernel}{\mbox{\THcolor{red4}\bfseries \__codedoc_texhigh_link:n {#2}}}%
-  \THSetClassCS{latex3.variable}{\mbox{\THcolor{azure6} \__codedoc_texhigh_link:n {#2}}}%
-  \THSetClassCS{latex3.function}{\mbox{\THcolor{green5} \__codedoc_texhigh_link:n {#2}}}%
-  \THSetClassCS{internal}{\mbox{\THcolor{brown3} \__codedoc_texhigh_link:n {#2}}}%
-  \THSetClassCS{latex.document}{\mbox{\THcolor{magenta4}\bfseries \__codedoc_texhigh_link:n {#2}}}%
-  \THSetClassCS{latex.programming}{\mbox{\THcolor{yellow7} \__codedoc_texhigh_link:n {#2}}}%
-  \THSetClassCS{latex}{\mbox{\THcolor{yellow8} \__codedoc_texhigh_link:n {#2}}}%
-  \THSetClassCS{primitive}{\texhigh@underline{\THcolor{purple5}\bfseries \__codedoc_texhigh_link:n {#2}}}%
-  \THSetClassCS{?}{\mbox{\THcolor{magenta5} \__codedoc_texhigh_link:n {#2}}}%
-  \THSetClassCH{?}{\mbox{#1}}
+  \THSetCS{latex3.primitive}{\mbox{\THcolor{red4}\bfseries \__codedoc_texhigh_link:n {#2}}}%
+  \THSetCS{latex3.kernel}{\mbox{\THcolor{red4}\bfseries \__codedoc_texhigh_link:n {#2}}}%
+  \THSetCS{latex3.variable}{\mbox{\THcolor{azure6} \__codedoc_texhigh_link:n {#2}}}%
+  \THSetCS{latex3.function}{\mbox{\THcolor{green5} \__codedoc_texhigh_link:n {#2}}}%
+  \THSetCS{internal}{\mbox{\THcolor{brown3} \__codedoc_texhigh_link:n {#2}}}%
+  \THSetCS{latex.document}{\mbox{\THcolor{magenta4}\bfseries \__codedoc_texhigh_link:n {#2}}}%
+  \THSetCS{latex.programming}{\mbox{\THcolor{yellow7} \__codedoc_texhigh_link:n {#2}}}%
+  \THSetCS{latex}{\mbox{\THcolor{yellow8} \__codedoc_texhigh_link:n {#2}}}%
+  \THSetCS{primitive}{\texhigh@underline{\THcolor{purple5}\bfseries \__codedoc_texhigh_link:n {#2}}}%
+  \THSetCS{?}{\mbox{\THcolor{magenta5} \__codedoc_texhigh_link:n {#2}}}%
+  \THSetCH{?}{\mbox{#1}}
 }
 
 \tl_new:N \l__codedoc_texhigh_link_tl

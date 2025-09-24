@@ -1,0 +1,16 @@
+*.aux
+*.exambuff
+*.glo
+*.gls
+*.gz
+*.idx
+*.ilg
+*.ind
+*.listing
+*.log
+*.out
+*.synctex
+*.thv
+*.toc
+*.verb
+example/texhigh-cache/*
