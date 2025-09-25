@@ -1,6 +1,33 @@
 \DocumentMetadata{lang=cn}
 \documentclass[class=article,openany]{cusdoc}
 
+\usepackage[style=numeric-comp,sorting=nyt,abbreviate=true,backend=biber,autocite=superscript]{biblatex}
+\DeclareFieldFormat{url}{\newline\url{#1}}
+\AtEveryBibitem{\clearfield{urlyear}\clearfield{subtitle}}
+\setlength{\bibitemsep}{\smallskipamount}
+\addbibresource{texhigh.bib}
+\newcommand{\ctanbibpkgname}{\pkg}
+\newcommand*{\mkbibbracketsuperscript}[1]{%
+  \mkbibsuperscript{%
+    \mkbibbrackets{#1}}}
+
+\DeclareCiteCommand{\supercite}[\mkbibbracketsuperscript]
+  {\usebibmacro{cite:init}%
+   \let\multicitedelim=\supercitedelim
+   \let\multicitesubentrydelim=\supercitesubentrydelim
+   \let\multiciterangedelim=\superciterangedelim
+   \let\multicitesubentryrangedelim=\supercitesubentryrangedelim
+   \iffieldundef{prenote}
+     {}
+     {\BibliographyWarning{Ignoring prenote argument}}%
+   \iffieldundef{postnote}
+     {}
+     {\BibliographyWarning{Ignoring postnote argument}}}
+  {\usebibmacro{citeindex}%
+   \usebibmacro{cite:comp}}
+  {}
+  {\usebibmacro{cite:dump}}
+
 \ExplSyntaxOn\makeatletter
 \sys_if_shell_unrestricted:T
   {
@@ -103,8 +130,8 @@
 \enablecombinedlist
 \def\contentsname{}
 \templatetoc[
-  section={space.left=1cm,space.hang=1cm,width.name=1cm},
-  subsection={space.left=1.5cm,width.name=1cm,space.hang=1cm},
+  section={space.left=1cm,space.hang=1cm,width.name=1cm,format=\bfseries,width.page=15pt},
+  subsection={space.left=1.5cm,width.name=1cm,space.hang=1cm,width.page=15pt},
 ][columns=2,column-sep=6mm,outer-sep=0pt,ragged]
 
 \bigskip
@@ -118,7 +145,7 @@
 
 \pkg{texhigh} 的主要优势是速度快、可自定义程度高。
 
-由于 texhigh 使用 Rust 编写，比起使用 Python 编写的 pygmentize 要快许多。
+由于 texhigh 使用 Rust 编写，比起使用 Python 编写的 pygmentize 要快许多\autocite{minted}。
 同样是处理 4 万行左右的 \texttt{expl3-code.tex} 文件，texhigh 只需 0.2s 左右，
 而 pygmentize 则需 3.5s，有十几倍的差距。
 
@@ -1039,6 +1066,83 @@ texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可�
 \end{function}
 
 
+\section{与 \pkg{tikz} 和 \pkg{tcolorbox} 集成}
+
+如果在 \pkg{texhigh} 加载之前已经加载了 \pkg{tikz} 宏包，或启用了 \texttt{tikz} 宏包选项，
+那么 \pkg{texhigh} 会定义 \cs{texhigh@shadetext} 以及以下代码：
+\begin{thverbatim}[left-space=0pt,right-space=0pt,use-ctab=latexcode,style={plain,cs-ref}]
+  \tikzset{texhigh/.is family,
+    texhigh/gradient primitive/.style={left color=blue,right color=cyan},
+    texhigh/gradient ?/.style={left color=red,right color=blue},
+    texhigh/gradient-style/.style={texhigh/gradient #1}}
+  \THSaveStyle{tikz.gradient}{%
+    \THSetCS{latex}{\texhigh@underline{\THcolor{purple}\bfseries#1#2}}
+    \THSetCS{primitive}
+      {\texhigh@shadetext{texhigh/gradient-style=primitive}{\bfseries #1#2}}%
+    \THSetCS{?}{\texhigh@shadetext{texhigh/gradient-style=?}{#1#2}}%
+  }
+\end{thverbatim}
+给了一个为控制序列添加渐变的例子：
+\begin{xample}
+\THRemoveClass{cs}{latex.programming} % 包含大写字母的就是 latex.programming
+\THSetFallback{cs}{latex.programming}{latex}
+\texhighverb[style=tikz.gradient]{\def\NotCommand{\relax}}
+\stopxamplecode
+\xampleprint
+\end{xample}
+
+\pkg{tcolorbox} 宏包\autocite{tcolorbox} 的 \pkg{listings} 和 \pkg{minted} 库提供了
+给代码添加盒子的功能。
+\pkg{texhigh} 适配了 \pkg{tcolorbox} 宏包，只要在加载 \pkg{texhigh} 之前
+加载 \pkg{tcolorbox} 宏包，就可使用 \pkg{texhigh} 高亮代码。
+
+\begin{keyval}[module=tcolorbox, path=/tcolorbox]{listing engine}
+  \begin{syntax}
+    listing engine = <&texhigh|...>
+  \end{syntax}
+使用的高亮引擎。
+\end{keyval}
+
+\begin{keyval}[module=tcolorbox, path=/tcolorbox]{texhigh options,texhigh options pre,texhigh options app}
+  \begin{syntax}
+    texhigh options     = \marg{texhigh high options}
+    texhigh options pre = \marg{texhigh high options}
+    texhigh options app = \marg{texhigh high options}
+  \end{syntax}
+传递给 \pkg{texhigh} 的选项，或在已有的选项前（或后）添加选项。
+\end{keyval}
+
+\begin{keyval}[module=tcolorbox, path=/tcolorbox]{texhigh gobble}
+  \begin{syntax}
+    texhigh gobble = <&auto|正整数>
+  \end{syntax}
+设置 \keyref*[high]{gobble}。
+\end{keyval}
+
+\begin{keyval}[module=tcolorbox, path=/tcolorbox]{
+  texhigh config file,texhigh ctab file,texhigh use ctab
+}
+  \begin{syntax}
+    texhigh config file = <{config file}>
+  \end{syntax}
+设置 \pkg{texhigh} 中对应的选项。
+\end{keyval}
+
+\begin{keyval}[module=tcolorbox, path=/tcolorbox]{texhigh style}
+  \begin{syntax}
+    texhigh style = <{style}>
+  \end{syntax}
+使用 \cs{THUseSavedStyle} 设置风格。
+\end{keyval}
+
+\begin{keyval}[module=tcolorbox, path=/tcolorbox]{texhigh detect catcode}
+  \begin{syntax}
+    texhigh detect catcode = <{lexer-catcode choice}>
+  \end{syntax}
+设置 \keyref*[high]{lexer-catcode}。
+\end{keyval}
+
+
 \section{辅助命令}
 
 本节的命令一般可在设置样式时使用。
@@ -1050,7 +1154,7 @@ texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可�
     \V\THColorStatus \marg{status}
   \end{syntax}
 设置文本和填充的颜色。
-与 \pkg{xcolor} 的 \tn{color} 命令相比，\cs{THcolor} 可以通过设置 \meta{status} 来启用或取消设置该颜色，如果 \meta{status} 为 0，则不设置颜色，否则设置对应颜色。
+与 \pkg{xcolor}\autocite{xcolor} 的 \tn{color} 命令相比，\cs{THcolor} 可以通过设置 \meta{status} 来启用或取消设置该颜色，如果 \meta{status} 为 0，则不设置颜色，否则设置对应颜色。
 \end{function}
 
 \begin{function}[EXP]{\texhigh@fallback,\texhigh@fallback@}
@@ -1133,20 +1237,20 @@ texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可�
 和 \tn{verb} 一样，\meta{tokens} 不能作为命令的参数。
 \end{function}
 
-\begin{function}{\@texhigh@underline}
+\begin{function}{\texhigh@underline}
   \begin{syntax}
-    \V{\@texhigh@underline} \marg{text}
+    \V{\texhigh@underline} \marg{text}
   \end{syntax}
 给不可断行的 \meta{text} 加上下划线，该下划线的长度比 \meta{text} 的略短。
 \end{function}
 
-\begin{function}{\@texhigh@shadetext}
+\begin{function}{\texhigh@shadetext}
   \begin{syntax}
-    \V{\@texhigh@shadetext} \marg{tikz options} \marg{text}
+    \V{\texhigh@shadetext} \marg{tikz options} \marg{text}
   \end{syntax}
 给 \meta{text} 加上阴影或底纹。\meta{tikz options} 一般包含创建阴影或类似的选项，如 \texttt{left color=red, right color=blue} 或 \texttt{fill stretch image=image.png} 等。
 
-需自行加载 \pkg{tikz} 宏包，或启用 \pkg{texhigh} 的 \texttt{tikz} 宏包选项。
+需在 \pkg{texhigh} 之前加载 \pkg{tikz} 宏包\autocite{pgf}，或启用 \pkg{texhigh} 的 \texttt{tikz} 宏包选项。
 \end{function}
 
 \begin{function}[EXP]{\texhigh@replicate}
@@ -1185,7 +1289,7 @@ texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可�
 与普通的正则表达式相比，它多了检测 token 的转义序列，例如 \verb|\c{relax}| 检测 token
 是否为 \token{relax}，只有 \token{relax} 才匹配此转义序列，普通正则表达式就做不到这一点。
 
-texhigh 支持的 \veta{regtex} 的语法和 \pkg{l3regex} 很相似，但暂不支持
+texhigh 支持的 \veta{regtex} 的语法和 \pkg{l3regex}\autocite{l3kernel} 很相似，但暂不支持
 \verb|\b| \verb|\B| \verb|\G| \verb|\u| 这几个转义序列，
 以及 \verb|\c| 转义序列的否定形式（即暂不支持 \verb|[^\c{begin}\c{end}]| 这类用法）。
 
@@ -1259,7 +1363,17 @@ texhigh 有 \cs{kaomoji} 命令用于排布文字，文字的显示效果部分�
 \end{keyval}
 
 \setuplayout{preset=balance}
+\setuptitle[section]{mode=nonumber}
+
+\defbibheading{titleed}{\section{参考文献}}
+\printbibliography[heading=titleed]
+
 \printindex[docchange]
+
+\vspace{15pt}
+
+% \DeclareCommandCopy{\oldverb}{\verb}
+\RenewDocumentCommand{\verb}{sv}{#2}
 \printindex[docusage]
 
 \end{document}

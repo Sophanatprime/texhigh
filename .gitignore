@@ -1,4 +1,7 @@
 *.aux
+*.bbl
+*.bcf
+*.blg
 *.exambuff
 *.glo
 *.gls
@@ -9,6 +12,7 @@
 *.listing
 *.log
 *.out
+*.run.xml
 *.synctex
 *.thv
 *.toc
