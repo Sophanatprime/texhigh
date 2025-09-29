@@ -20,11 +20,14 @@
 %% 
 %% ---------------------------------------------------------------------
 %% 
-\ProvidesExplPackage{texhigh}{2025-09-24}{0.4.0}{highlight TeX string}
+\ProvidesExplPackage{texhigh}{2025-09-29}{0.4.1-a}{highlight TeX string}
 
+\tl_new:N \l__texhigh_cmd_tl
+\tl_set:Nn \l__texhigh_cmd_tl { texhigh }
 \cs_new_protected:Npn \texhigh_check_bin:TF #1#2
   {
-    \sys_get_shell:nnNTF { texhigh } { \cctab_select:N \c_str_cctab } \l_tmpa_tl
+    \exp_args:Ne \sys_get_shell:nnNTF { \l__texhigh_cmd_tl }
+      { \cctab_select:N \c_str_cctab } \l_tmpa_tl
       { \str_if_in:NnTF \l_tmpa_tl { Wenjian~Chern } {#1} {#2} }
       {#2}
   }
@@ -37,6 +40,7 @@
 
 \quark_new:N \q__texhigh_mark
 \quark_new:N \q__texhigh_nil
+\__kernel_quark_new_conditional:Nn \__texhigh_quark_if_nil:N { TF }
 \__kernel_quark_new_conditional:Nn \__texhigh_quark_if_nil:n { TF }
 \quark_new:N \q__texhigh_stop
 \cs_new:Npn \__texhigh_use_none_delimit_by_q_stop:nw #1 #2 \q__texhigh_stop {#1}
@@ -548,25 +552,48 @@
 
 \cs_new:Npn \texhigh_base_encode:n #1
   {
-    \exp_args:Ne \texhigh_base_encode_ascii:n
-      { \str_map_function:nN {#1} \__texhigh_base_char_to_ascii:N }
+    \__texhigh_base_encode_bin:e
+      {
+        \exp_last_unbraced:Ne
+          \__texhigh_base_encode_char:w { \str_convert_pdfname:n {#1} }
+        \q__texhigh_nil
+      }
   }
 \cs_generate_variant:Nn \texhigh_base_encode:n { e }
-\cs_new:Npn \__texhigh_base_char_to_ascii:N #1 { \__str_encode_utf_viii_char:n { `#1 } }
+\cs_new:Npn \__texhigh_base_encode_char:w #1
+  {
+    \__texhigh_quark_if_nil:NTF #1 { }
+      {
+        \token_if_eq_charcode:NNTF #1 ##
+          { \__texhigh_base_encode_char_aux:NN }
+          { \__texhigh_base_encode_char_aux:N #1 }
+      }
+  }
+\cs_new:Npn \__texhigh_base_encode_char_aux:NN #1#2
+  {
+    \__texhigh_base_char_to_bin:Nn " { #1#2 }
+    \__texhigh_base_encode_char:w
+  }
+\cs_new:Npn \__texhigh_base_encode_char_aux:N #1
+  {
+    \__texhigh_base_char_to_bin:Nn ` { #1 }
+    \__texhigh_base_encode_char:w
+  }
 % base64 encoding and decoding.
 % from: https://tex.stackexchange.com/a/605409/232375
 \cs_new:Npn \texhigh_base_encode_ascii:n #1
   {
-    \exp_args:Ne \__texhigh_base_encode_bin:n
-      { \str_map_function:nN {#1} \__texhigh_base_char_to_bin:n }
+    \__texhigh_base_encode_bin:e
+      { \str_map_tokens:nn {#1} { \__texhigh_base_char_to_bin:Nn ` } }
   }
 \cs_generate_variant:Nn \texhigh_base_encode_ascii:n { e }
-\cs_new:Npn \__texhigh_base_char_to_bin:n #1
-  { \exp_args:Nf \__texhigh_base_char_to_bin_pad:nn { \int_to_bin:n { `#1 } } { 8 } }
+\cs_new:Npn \__texhigh_base_char_to_bin:Nn #1#2
+  { \exp_args:Nf \__texhigh_base_char_to_bin_pad:nn { \int_to_bin:n { #1#2 } } { 8 } }
 \cs_new:Npn \__texhigh_base_char_to_bin_pad:nn #1 #2
   { \prg_replicate:nn { #2 - \str_count:n {#1} } { 0 } #1 }
 \cs_new:Npn \__texhigh_base_encode_bin:n #1
   { \__texhigh_base_encode_bin:w #1 222222 \q_stop }
+\cs_generate_variant:Nn \__texhigh_base_encode_bin:n { e }
 \cs_new:Npn \__texhigh_base_encode_bin:w #1#2#3#4#5#6
   { \__texhigh_base_encode_bin_aux:w #1#2#3#4#5#6 2 \q_nil }
 \cs_new:Npn \__texhigh_base_encode_bin_aux:w #1 2 #2 \q_nil
@@ -655,6 +682,7 @@
 \seq_new:N \l__texhigh_enabled_ranges_seq
 \keys_define:nn { texhigh/high }
   {
+    command .tl_set:N = \l__texhigh_cmd_tl ,
     save-catcode .code:n = 
       {
         \tl_clear:N \@texhigh@reset@ctab
@@ -1403,19 +1431,19 @@
   }
 \cs_new:Npn \__texhigh_args_with_text:e #1
   {
-    texhigh \c_space_tl
+    \l__texhigh_cmd_tl \c_space_tl
     \__texhigh_args:
     --text \c_space_tl '#1'
   }
 \cs_new:Npn \__texhigh_args_with_text_base:e #1
   {
-    texhigh \c_space_tl
+    \l__texhigh_cmd_tl \c_space_tl
     \__texhigh_args:
     --text-base64 \c_space_tl ' \texhigh_base_encode:e {#1} '
   }
 \cs_new:Npn \__texhigh_args_with_file:n #1
   {
-    texhigh \c_space_tl
+    \l__texhigh_cmd_tl \c_space_tl
     \__texhigh_args:
     --file \c_space_tl #1
   }
@@ -1559,7 +1587,7 @@
           {
             \sys_shell_now:e
               { 
-                texhigh~ --nb~ layout~ \__texhigh_layout_args:n {#3}
+                \l__texhigh_cmd_tl \c_space_tl --nb~ layout~ \__texhigh_layout_args:n {#3}
                 \c_space_tl -o~ \l__texhigh_tmp_str .png
               }
           }
@@ -1567,7 +1595,7 @@
       }
       {
         \exp_args:Ne \sys_get_shell:nnNTF 
-          { texhigh~ --nb~ layout~ \__texhigh_layout_args:n {#3} }
+          { \l__texhigh_cmd_tl \c_space_tl --nb~ layout~ \__texhigh_layout_args:n {#3} }
           { 
             \int_set:Nn \endlinechar { -1 } 
             \char_set_catcode_other:N \# 
@@ -1598,6 +1626,7 @@
     cache-dir .meta:nn = { texhigh/high } { cache-dir = {#1} } ,
     color .meta:n = { prelude/color } ,
     tikz .meta:n = { prelude/tikz } ,
+    command .tl_set:N = \l__texhigh_cmd_tl ,
   }
 
 \ProcessKeyOptions[texhigh/options]

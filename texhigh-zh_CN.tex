@@ -1,5 +1,6 @@
 \DocumentMetadata{lang=cn}
-\documentclass[class=article,openany]{cusdoc}
+\PassOptionsToPackage{hypertexnames=false}{hyperref}
+\documentclass[class=article,openany]{cusdoc}[2025/09/29]
 
 \usepackage[style=numeric-comp,sorting=nyt,abbreviate=true,backend=biber,autocite=superscript]{biblatex}
 \DeclareFieldFormat{url}{\newline\url{#1}}
@@ -101,10 +102,11 @@
   pdfcreator={\XeLaTeX} with hyperref and \CusLaTeX}
 
 \makeatletter
+\def\sectionmark#1{\InsertMark{2e-right}{\titleifnamed{\titlethesection\quad}{}#1}}
 \setuptitle[section]{format=\bfseries\Large,
   beforeskip=10pt plus 5pt minus 5pt,
   afterskip=10pt plus 5pt minus 5pt,
-  fixskip, ensureskip,
+  fixskip, ensureskip, mark=\sectionmark,
 }
 \setuptitle[subsection]{format=\bfseries\large,
   beforeskip=7pt plus 5pt minus 5pt,
@@ -115,16 +117,55 @@
   marginparsep=10pt,marginparwidth=100pt,
   right=1.7cm,left=120pt,top=2.3cm,bottom=2.5cm,
   headsep=10pt,footskip=30pt,hfoffset=0pt,
+} 
+\setpagestyle+{fancy}[totalempty]{%
+  \setfoot[c]{\thepage}%
+  \sethead[r]{\footnotesize\FirstMark{2e-right}}%
+  \setheadrule{\@nameuse{pdfannot@link@on@@}\vbox to\z@
+    {\vss\hsize\headwidth\raggedleft \@makepagedots\vss}}%
 }
-\setpagestyle+{fancy}[totalempty]{\setfoot[c]{\thepage}}
+\setpagestyle{plain}[fancy]{}
+\ExplSyntaxOn
+\cs_new:Npn \@makepagedots@newblock
+  {
+    \int_compare:nNnT { \int_mod:nn \l_tmpa_int { 5 } } = { 0 }
+      { \enspace }
+  }
+\cs_new_protected:Npn \@makepagedots
+  {
+    \int_set:Nn \l_tmpa_int { 1 }
+    \int_set:Nn \l_tmpb_int { \g_shipout_readonly_int + 1} % shipout+1 = \c@page
+    \int_while_do:nNnn \l_tmpa_int < { \l_tmpb_int }
+      {
+        \hyperlink{page.\int_use:N \l_tmpa_int}{$\circ$}
+        \@makepagedots@newblock
+        \int_incr:N \l_tmpa_int
+      }
+    \int_compare:nNnT \l_tmpa_int = \l_tmpb_int
+      {
+        $\bullet$
+        \@makepagedots@newblock
+        \int_incr:N \l_tmpa_int
+      }
+    \int_set:Nn \l_tmpb_int { \PreviousTotalPages + 1 }
+    \int_while_do:nNnn \l_tmpa_int < { \l_tmpb_int }
+      {
+        \hyperlink{page.\int_use:N \l_tmpa_int}{$\circ$}
+        \@makepagedots@newblock
+        \int_incr:N \l_tmpa_int
+      }
+    \int_compare:nNnT { \tex_lastnodetype:D } = { 12 } { \tex_unkern:D }
+  }
+\ExplSyntaxOff
+
 
 \removegeneralname
-\changes{v0.4.0}{2025/09/24}{添加文档。}
+\changes[文档]{v0.4.0}{2025/09/24}{添加文档。}
 \begin{document}
 
 \title{\TeX high —— 高亮 \TeX 源码}
 \author{雾月\thanks{\texttt{longaster@163.com}}}
-\date{\zhtoday\quad v0.4.0}
+\date{\zhtoday\quad v0.4.1-a}
 \maketitle
 
 \enablecombinedlist
@@ -392,6 +433,7 @@ texhigh 还有实验性质的计算文字布局（layout）的功能，通过它
 是否输出 texhigh 的版权信息。一般无需修改。
 \end{keyval}
 
+\changes{v0.4.1-a}{2025/09/29}{修改 Base64 编码的实现方式，不再依赖 \LaTeXiii 的内部命令。}
 \begin{keyval}[path=high]{text-base64}
   \begin{syntax}
     text-base64 = <&\TTF> & true
@@ -596,6 +638,15 @@ texhigh 还有实验性质的计算文字布局（layout）的功能，通过它
   \texhighdefstyle*[high]{my len 1}{\def\mylen{#1}}
 \end{thverbatim}
 后，就可以在 \cs{texhighfile} 等命令或环境中使用 \texhighverb|\texhighfile[my option 1, my len 1=10]{..}| 了。
+
+\begin{keyval}[path=high,added=2025/09/29]{command}
+  \begin{syntax}
+    command = <{texhigh 可执行文件路径}> & texhigh
+  \end{syntax}
+设置可执行文件的路径。初始为 \texttt{texhigh}。如果不把 texhigh 命令行工具放在 TDS 目录，而将其放在别处（比如当前工作目录），可以使用它设置 texhigh 的路径。
+
+这个选项也可在加载本宏包时使用。
+\end{keyval}
 
 \subsection{配置选项}
 
@@ -886,7 +937,7 @@ texhigh 认为其名为 \meta{real name}，同时 \keyref*[high]{enabled-ranges}
   \begin{syntax}
     arguments = \marg{arguments} &!
   \end{syntax}
-\meta{arguments} 为 \pkg{ltcmd}（\pkg{xparse}）的参数，参数数目最多为 9 个。
+\meta{arguments} 为 \pkg{ltcmd}\autocite{latex}（\pkg{xparse}\autocite{xparse}）的参数，参数数目最多为 9 个。
 
 \meta{argument} 包括 \texttt{m o O d D r R s t v} 以及 \texttt{l u g G}
 暂不支持 \texttt{e E c b}，并且 \texttt{! + = >} 也是无效的。
@@ -1068,7 +1119,7 @@ texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可�
 
 \section{与 \pkg{tikz} 和 \pkg{tcolorbox} 集成}
 
-如果在 \pkg{texhigh} 加载之前已经加载了 \pkg{tikz} 宏包，或启用了 \texttt{tikz} 宏包选项，
+如果在 \pkg{texhigh} 加载之前已经加载了 \pkg{tikz} 宏包\autocite{pgf}，或启用了 \texttt{tikz} 宏包选项，
 那么 \pkg{texhigh} 会定义 \cs{texhigh@shadetext} 以及以下代码：
 \begin{thverbatim}[left-space=0pt,right-space=0pt,use-ctab=latexcode,style={plain,cs-ref}]
   \tikzset{texhigh/.is family,
@@ -1096,14 +1147,15 @@ texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可�
 \pkg{texhigh} 适配了 \pkg{tcolorbox} 宏包，只要在加载 \pkg{texhigh} 之前
 加载 \pkg{tcolorbox} 宏包，就可使用 \pkg{texhigh} 高亮代码。
 
-\begin{keyval}[module=tcolorbox, path=/tcolorbox]{listing engine}
+\changes[文档]{v0.4.1-a}{2025/09/29}{修复 \pkg{tcolorbox} 的选项的路径。}
+\begin{keyval}[module=tcolorbox, path=/tcb]{listing engine}
   \begin{syntax}
     listing engine = <&texhigh|...>
   \end{syntax}
 使用的高亮引擎。
 \end{keyval}
 
-\begin{keyval}[module=tcolorbox, path=/tcolorbox]{texhigh options,texhigh options pre,texhigh options app}
+\begin{keyval}[module=tcolorbox, path=/tcb]{texhigh options,texhigh options pre,texhigh options app}
   \begin{syntax}
     texhigh options     = \marg{texhigh high options}
     texhigh options pre = \marg{texhigh high options}
@@ -1112,14 +1164,14 @@ texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可�
 传递给 \pkg{texhigh} 的选项，或在已有的选项前（或后）添加选项。
 \end{keyval}
 
-\begin{keyval}[module=tcolorbox, path=/tcolorbox]{texhigh gobble}
+\begin{keyval}[module=tcolorbox, path=/tcb]{texhigh gobble}
   \begin{syntax}
     texhigh gobble = <&auto|正整数>
   \end{syntax}
 设置 \keyref*[high]{gobble}。
 \end{keyval}
 
-\begin{keyval}[module=tcolorbox, path=/tcolorbox]{
+\begin{keyval}[module=tcolorbox, path=/tcb]{
   texhigh config file,texhigh ctab file,texhigh use ctab
 }
   \begin{syntax}
@@ -1128,14 +1180,14 @@ texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可�
 设置 \pkg{texhigh} 中对应的选项。
 \end{keyval}
 
-\begin{keyval}[module=tcolorbox, path=/tcolorbox]{texhigh style}
+\begin{keyval}[module=tcolorbox, path=/tcb]{texhigh style}
   \begin{syntax}
     texhigh style = <{style}>
   \end{syntax}
 使用 \cs{THUseSavedStyle} 设置风格。
 \end{keyval}
 
-\begin{keyval}[module=tcolorbox, path=/tcolorbox]{texhigh detect catcode}
+\begin{keyval}[module=tcolorbox, path=/tcb]{texhigh detect catcode}
   \begin{syntax}
     texhigh detect catcode = <{lexer-catcode choice}>
   \end{syntax}
@@ -1305,7 +1357,7 @@ texhigh 支持的 \veta{regtex} 的语法和 \pkg{l3regex}\autocite{l3kernel} �
 
 \subsection{计算文字布局}
 
-使用本节所述的特性需自行加载 \pkg{fontspec} 宏包。
+使用本节所述的特性需自行加载 \pkg{fontspec} 宏包\autocite{fontspec}。
 
 texhigh 有 \cs{kaomoji} 命令用于排布文字，文字的显示效果部分取决于系统拥有的字体和所设置的字体。
 \begin{function}{\kaomoji}

@@ -18,3 +18,4 @@
 *.toc
 *.verb
 example/texhigh-cache/*
+test*
