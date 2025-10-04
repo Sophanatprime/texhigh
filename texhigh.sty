@@ -87,9 +87,13 @@
 \cs_new_protected:Npn \THin #1 { \TH@in {#1} } %: indent;
 \cs_new_protected:Npn \THinPlain #1 { \TH@in {#1} } %: indent;
 \cs_new:Npn \THcr #1 { \TH@cr {#1} } % char replacement;
-\cs_new:Npn \THcrPlain #1 { \char_generate:nn { #1 } { 12 } }
+\cs_new:Npn \THcrPlain #1 { \codepoint_generate:nn { #1 } { 12 } }
 \cs_new:Npn \TH@cr #1 
-  { \cs_if_exist_use:cF { l__texhigh_cr-#1_tl } { \char_generate:nn { #1 } { 12 } } }
+  {
+    \cs_if_exist:cTF { l__texhigh_cr-#1_tl }
+      { \exp_not:v { l__texhigh_cr-#1_tl } }
+      { \codepoint_generate:nn { #1 } { 12 } }
+  }
 \cs_new_protected:Npn \THbp #1 { \use:c { TH@bp@\texhigh@fallback{bp}{#1} } } %: break point;
 \cs_new_protected:Npn \THbpPlain #1 { \TH@bp@PLAIN } %: break point;
 \cs_new_protected:Npn \THcs #1#2#3 %: control sequence;
@@ -338,7 +342,7 @@
       {
         #1
         \quark_if_recursion_tail_stop:n {#2}
-        \char_generate:nn { "#2 } { 12 }
+        \codepoint_generate:nn { "#2 } { 12 }
         \__texhigh_normalize_cs:w
       }
   }
@@ -411,7 +415,7 @@
       {
         \tl_set:cx { l__texhigh_cr- \int_eval:n { `#2 } _tl }
           {
-            \exp_not:N \tex_ifincsname:D \char_generate:nn { `#2 } { 12 }
+            \exp_not:N \tex_ifincsname:D \codepoint_generate:nn { `#2 } { 12 }
             \exp_not:N \else: \exp_not:N \exp_not:n { \exp_not:n { #3 } }
             \exp_not:N \fi:
           }

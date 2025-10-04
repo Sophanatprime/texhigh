@@ -160,6 +160,8 @@
 
 
 \removegeneralname
+
+\changes{v0.4.1-a}{2025/10/04}{把部分 \cs{char_generate:nn} 替换为 \cs[break-at-any]{codepoint_generate:nn}。}
 \changes[文档]{v0.4.0}{2025/09/24}{添加文档。}
 \begin{document}
 
@@ -686,7 +688,7 @@ texhigh 还有实验性质的计算文字布局（layout）的功能，通过它
     \V\THSetCharReplacement   \marg{char} \marg{repr}
     \V\THSetCharReplacement * \marg{char} \marg{repr}
   \end{syntax}
-设置 \meta{char} 的替换文本，在显示 \meta{char} 是，会替换为 \meta{repr}。
+设置 \meta{char} 的替换文本，在显示 \meta{char} 时，会替换为 \meta{repr}。
 若使用\emph{不}带星号的版本，则还会使用 \tn{ifincsname} 判断是否在控制序列的名里，若是，则不替换。
 \end{function}
 
