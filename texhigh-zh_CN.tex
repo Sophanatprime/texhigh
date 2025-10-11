@@ -1,6 +1,7 @@
 \DocumentMetadata{lang=cn}
 \PassOptionsToPackage{hypertexnames=false}{hyperref}
-\documentclass[class=article,openany]{cusdoc}[2025/09/29]
+\documentclass[class=article,openany]{cusdoc}[2025/10/10]
+\usepackage{xurl}
 
 \usepackage[style=numeric-comp,sorting=nyt,abbreviate=true,backend=biber,autocite=superscript]{biblatex}
 \DeclareFieldFormat{url}{\newline\url{#1}}
@@ -92,6 +93,116 @@
     \group_end:
   }
 
+\ekeys_cmd_new_scanner:nnnpn { maybe-a-string } { 2 }
+  {
+    \ekeys_cmd_register_cs:c { #1-arg#3-maybe-a-string-default }
+    \tl_set:ce { #1-arg#3-maybe-a-string-default }
+      { \tl_if_blank:nTF {#2} { \c_novalue_tl } { \exp_not:n {#2} } }
+  }
+  {
+    \peek_meaning:NTF \c_space_token
+      {
+        \ekeys_cmd_add_arg:n { \BooleanTrue }
+        \ekeys_cmd_add_arg:v
+          { \ekeys_cmd_name: -arg \ekeys_cmd_args: -maybe-a-string-default }
+        \ekeys_cmd_scanner_end:
+      }
+      {
+        \peek_catcode:NTF \c_group_begin_token
+          { 
+            \ekeys_cmd_add_arg:n { \BooleanFalse }
+            \__this_maybe_a_string:n
+          }
+          { \__this_maybe_a_string_check:N }
+      }
+  }
+\cs_new:Npn \__this_maybe_a_string_check:N #1
+  {
+    \bool_lazy_and:nnTF
+      { ! \token_if_control_word_p:N #1 }
+      { ! \token_if_control_symbol_p:N #1 }
+      {
+        \str_if_in:nnTF 
+          {ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789}
+          {#1}
+          { \use_i:nn } { \use_ii:nn }
+      }
+      { \use_ii:nn }
+        {
+          \ekeys_cmd_add_arg:n { \BooleanTrue }
+          \exp_args:No \__this_maybe_a_string:n { \token_to_str:N #1 }
+        }
+        {
+          \ekeys_cmd_add_arg:n { \BooleanFalse }
+          \ekeys_cmd_add_arg:v
+            { \ekeys_cmd_name: -arg \ekeys_cmd_args: -maybe-a-string-default }
+          \token_if_eq_meaning:NNF #1 \scan_stop:
+            { \ekeys_cmd_scanner_end: #1 }
+        }
+  }
+\cs_new:Npn \__this_maybe_a_string:n #1
+  {
+    \ekeys_cmd_add_arg:n {#1}
+    \ekeys_cmd_scanner_end:
+  }
+\ekeysdeclarecmd\escape{m K{{maybe-a-string}}}
+  {\texttt{\textbackslash #1\IfValueT{#3}{\IfBooleanTF{#2}{#3}{\{#3\}}}}}
+\ekeys_cmd_new_scanner:nnnpn { collect-n-or-arg } { 2 }
+  {
+    \ekeys_cmd_register_cs:c { #1-arg#3-collect-n-or-arg:w }
+    \tl_set:Ne \l_tmpa_tl { \int_eval:n { \use:n #2 + 0 } }
+    \use:e
+      {
+        \cs_generate_from_arg_count:NNnn
+          \exp_not:c { #1-arg#3-collect-n-or-arg:w }
+          \cs_new:Npn
+          { \l_tmpa_tl }
+          { {
+            \if_case:w \l_tmpa_tl \exp_stop_f:
+            \or: \exp_not:n {##1}
+            \or: \exp_not:n {##1##2}
+            \or: \exp_not:n {##1##2##3}
+            \or: \exp_not:n {##1##2##3##4}
+            \or: \exp_not:n {##1##2##3##4##5}
+            \or: \exp_not:n {##1##2##3##4##5##6}
+            \or: \exp_not:n {##1##2##3##4##5##6##7}
+            \or: \exp_not:n {##1##2##3##4##5##6##7##8}
+            \or: \exp_not:n {##1##2##3##4##5##6##7##8##9}
+            \fi:
+          } }
+      }
+  }
+  {
+    \peek_remove_spaces:n
+      {
+        \peek_catcode:NTF \c_group_begin_token
+          {
+            \ekeys_cmd_add_arg:n { \BooleanFalse }
+            \__this_collect_n:n
+          }
+          {
+            \ekeys_cmd_add_arg:n { \BooleanTrue }
+            \exp_args:NNc \exp_after:wN \__this_collect_n:n
+              { \ekeys_cmd_name:-arg\ekeys_cmd_args:-collect-n-or-arg:w }
+          }
+      }
+  }
+\cs_new:Npn \__this_collect_n:n #1
+  {
+    \ekeys_cmd_add_arg:n {#1}
+    \ekeys_cmd_scanner_end:
+  }
+\ekeysdeclarecmd \__this_collect_x:w { K{{collect-n-or-arg}{2}} }
+  { \texttt{\textbackslash x\IfBooleanTF{#1}{#2}{\{#2\}}} }
+\ekeysdeclarecmd \__this_collect_u:w { K{{collect-n-or-arg}{4}} }
+  { \texttt{\textbackslash u\IfBooleanTF{#1}{#2}{\{#2\}}} }
+
+\newlist{regexsyntax}{description}{1}
+\setlist[regexsyntax]{nosep,
+  leftmargin=1cm,labelwidth=8mm,labelsep=2mm,itemindent=5mm,align=left,
+  before={\let\V\Verbatimize \let\x\__this_collect_x:w \let\u\__this_collect_u:w},
+}
+
 \NewDocumentEnvironment{thverbatim}{+!O{}}
   {\UseHook{env/texhigh/begin}\texhigh[gobble=auto,left-space=2cm,right-space=2cm,before=\smallskip,after=\nointerlineskip\smallskip,#1]}
   {\endtexhigh\@endparenv\UseHook{env/texhigh/end}}
@@ -162,7 +273,7 @@
 \removegeneralname
 
 \changes{v0.4.1-a}{2025/10/04}{把部分 \cs{char_generate:nn} 替换为 \cs[break-at-any]{codepoint_generate:nn}。}
-\changes[文档]{v0.4.0}{2025/09/24}{添加文档。}
+\docchange{v0.4.0}{2025/09/24}{添加文档。}
 \begin{document}
 
 \title{\TeX high —— 高亮 \TeX 源码}
@@ -1043,12 +1154,14 @@ texhigh 把每个参数都作为单独的一个 range，名为 \texttt{argument.
 \cs{THSetRange} 就是同时设置普通代码段和逃逸代码段的样式。
 \end{function}
 
+\docchange{v0.4.1-a}{2025/10/07}{更正 \cs{THCollectRange} 的说明。}
 \begin{function}{\THCollectRange}
   \begin{syntax}
     \V\THCollectRange \marg{do code} \V\THrs \meta{text code} \V\THre
     \V\THCollectRange \marg{do code} \V\THes \meta{text code} \V\THee
   \end{syntax}
-收集普通代码段或逃逸代码段。\meta{do code} 后面紧跟着 \marg{text code}。
+收集普通代码段或逃逸代码段。\meta{do code} 可以使用 3 个参数，
+第一个为 range/escape 的 id，第二个为 range/escape 的内容，第三个为 range/escape 的原始内容。
 \end{function}
 
 \begin{function}{\THPASS}
@@ -1149,7 +1262,7 @@ texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可�
 \pkg{texhigh} 适配了 \pkg{tcolorbox} 宏包，只要在加载 \pkg{texhigh} 之前
 加载 \pkg{tcolorbox} 宏包，就可使用 \pkg{texhigh} 高亮代码。
 
-\changes[文档]{v0.4.1-a}{2025/09/29}{修复 \pkg{tcolorbox} 的选项的路径。}
+\docchange{v0.4.1-a}{2025/09/29}{修复 \pkg{tcolorbox} 的选项的路径。}
 \begin{keyval}[module=tcolorbox, path=/tcb]{listing engine}
   \begin{syntax}
     listing engine = <&texhigh|...>
@@ -1330,11 +1443,167 @@ texhigh 把不同的 token 分成几类（\veta{class}），每个类型都可�
 \end{tabular}}
 \end{function}
 
+\docchange{v0.4.1-a}{2025/10/08}{补充正则表达式的语法。}
 \section{正则表达式}\label{sec:regex}
 
 这里的正则表达式指的是纯文本正则表达式（简写为 \veta{regex}），也就是只对纯文本生效，此外还有 \TeX 正则表达式（简写为 \veta{regtex}），只对 tokens 生效，见\cref{sec:regtex}。
 
-纯文本正则表达式的语法见 \url{https://docs.rs/regex/latest/regex/#syntax}。
+纯文本正则表达式的完整语法见 \url{https://docs.rs/regex/latest/regex/#syntax}，以下内容由此翻译而来。
+
+\subsection{匹配一个字符}
+
+\begin{regexsyntax}
+  \item[\texttt{.}] 除了 \escape{n}（U+0A）外的任何字符，如果使用 \texttt{s} 标签（flag）则可以会包含此字符。
+  \item[\texttt{[0-9]}] 任何 ASCII 数字。
+  \item[\escape d] 任意 Unicode 数字（等于 \escape p{Nd}）。
+  \item[\escape D] 任何非数字字符。
+  \item[\escape pX] 名为 \texttt{X} 的 Unicode 字符类。
+  \item[\escape p{\meta{class}}] 名为 \meta{class} 的 Unicode 字符类。
+  \item[\escape PX] 不属于 Unicode 字符类 \texttt{X} 的字符。
+  \item[\escape P{\meta{class}}] 不属于 \meta{class} 字符类的字符。
+\end{regexsyntax}
+
+\subsection{字符类}
+
+\begin{regexsyntax}
+  \item[\texttt{[xyz]}] 匹配 \texttt{x}、\texttt{y}、\texttt{z} 中的某一个字符类。
+  \item[\texttt{\V^xyz}] 不匹配 \texttt{x}、\texttt{y}、\texttt{z} 中的任意一个字符类。
+  \item[\texttt{a-z}] 一个匹配 \texttt{a} 到 \texttt{z} 中任意字符的字符类。
+  \item[\texttt{[[:alpha:]]}] 字符类匹配任意 ASCII 拉丁字母（\texttt{A-Za-z}）。
+  \item[\texttt{[[:\V^alpha:]]}] 字符类匹配任意非 ASCII 拉丁字母（\texttt{\V^A-Za-z}）。
+  \item[\texttt{[x[\V^xyz]]}] 嵌套字符类。
+  \item[\texttt{a-y\V{&&}xyz}] 字符类的交集。
+  \item[\texttt{0-9\V{&&}[\V^4]}] 使用交集和取反获得字符类的差。
+  \item[\texttt{0-9--4}] 直接减，匹配除了 \texttt{4} 以外的 \texttt{0-9} 之间的字符。
+  \item[\texttt{a-g\V{~~}b-h}] 对称差，匹配 \texttt{a} 和 \texttt{g}。
+  \item[\texttt{[\V{\\[\\]}]}] 字符转义。
+  \item[\texttt{[a\V{&&}b]}] 空字符类，不匹配任何内容。
+\end{regexsyntax}
+
+\subsection{组合}
+
+\begin{regexsyntax}
+  \item[\texttt{xy}] \texttt{x} 后面紧接着 \texttt{y}。
+  \item[\texttt{x\V|y}] \texttt{x} 或 \texttt{y}，首先检查 \texttt{x}。
+\end{regexsyntax}
+
+\subsection{重复}
+
+\begin{regexsyntax}
+  \item[\texttt{x*}] 零个或多个 \texttt{x}，贪婪的匹配。
+  \item[\texttt{x+}] 一个或多个 \texttt{x}，贪婪的匹配。
+  \item[\texttt{x?}] 零个或一个 \texttt{x}，贪婪的匹配。
+  \item[\texttt{x*?}] 零个或多个 \texttt{x}，非贪婪的匹配。
+  \item[\texttt{x+?}] 一个或多个 \texttt{x}，非贪婪的匹配。
+  \item[\texttt{x??}] 零个或一个 \texttt{x}，非贪婪的匹配。
+  \item[\texttt{\V{x{n,m}}}] 至少 $n$ 个，至多 $m$ 个，贪婪的匹配。
+  \item[\texttt{\V{x{n,}}}] 至少 $n$ 个，贪婪的匹配。
+  \item[\texttt{\V{x{n}}}] 精确的 $n$ 个。
+  \item[\texttt{\V{x{n,m}?}}] 至少 $n$ 个，至多 $m$ 个，非贪婪的匹配。
+  \item[\texttt{\V{x{n,}?}}] 至少 $n$ 个，非贪婪的匹配。
+  \item[\texttt{\V{x{n}?}}] 精确的 $n$ 个。
+\end{regexsyntax}
+
+\subsection{空匹配}\label{sec:empty-matches}
+
+\begin{regexsyntax}
+  \item[\texttt{\V^}] 匹配开始位置，如果是多行模式则匹配每行的开始。
+  \item[\texttt{\V\$}] 匹配结束位置，如果是多行模式则匹配每行的结束。
+  \item[\escape A] 匹配开始位置，多行模式也仅匹配开始位置。
+  \item[\escape z] 匹配结束位置，多行模式也仅匹配结束位置。
+  \item[\escape b] Unicode 单词边界（\escape w 在一侧，\escape W、\escape A、\escape z 在另一侧）。
+  \item[\escape B] 非 Unicode 单词边界。
+  \item[\escape b{start}, \escape <] Unicode 单词开始的位置（左侧为 \escape W、\escape A，右侧为 \escape w）。
+  \item[\escape b{end}, \escape >] Unicode 单词结束的位置（左侧为 \escape w，右侧为 \escape W、\escape z）。
+  \item[\escape b{start-half}] Unicode 单词开始位置的一边（左侧为 \escape W、\escape A）。
+  \item[\escape b{end-half}] Unicode 单词结束位置的一边（右侧为 \escape W、\escape z）。
+\end{regexsyntax}
+
+\subsection{分组和标签}
+
+\begin{regexsyntax}
+  \item[\texttt{(\meta{exp})}] 编号捕获组（依左圆括号的位置编号）。
+  \item[\texttt{(?P<\meta{name}>\meta{exp})}] 命名（同时也编号）捕获组，\meta{name} 只能由字母、数字或 \texttt{\V{._[]}} 组成。
+  \item[\texttt{(?<\meta{name}>\meta{exp})}] 命名（同时也编号）捕获组，\meta{name} 只能由字母、数字或 \texttt{\V{._[]}} 组成。
+  \item[\texttt{(?:\meta{exp})}] 非捕获组。
+  \item[\texttt{?\meta{flags}}] 设置标签（在当前组中有效）。\texttt{i} 标签可启用大小写不敏感的匹配。
+  \item[\texttt{(flags:\meta{exp})}] 设置标签（在 \meta{exp} 中有效）。
+\end{regexsyntax}
+
+捕获组的名称只能由字母、数字或 \texttt{\Verbatimize{._[]}} 组成。
+且必须以 \texttt{\_} 或字母开头。
+字母是具有 \texttt{Alphabetic} 这个 Unicode 属性的字符。
+数字是具有 \texttt{Decimal_Number}、\texttt{Letter_Number}、\texttt{Other_Number} 这些 Unicode 属性之一的字符。
+
+\subsection{转义序列}
+
+\begin{regexsyntax}\def\p{\escape p}
+  \item[\texttt{\textbackslash \meta{char}}] 匹配字面值 \meta{char}。\meta{char} 不能是 ASCII 以外的字符，也不能是 \texttt{0-9A-Za-z<>} 之一，也不能是以下列出的其它转义字符（它们有特殊含义）。
+  \item[\escape a] 表示 \x 07。
+  \item[\escape f] 表示 \x 0C。
+  \item[\escape t] 水平制表符。
+  \item[\escape n] 新行。
+  \item[\escape r] 回车。
+  \item[\escape v] 表示 \x 0B。
+  \item[\escape A] 见\cref{sec:empty-matches}。
+  \item[\escape z] 见\cref{sec:empty-matches}。
+  \item[\escape b] 见\cref{sec:empty-matches}。
+  \item[\escape B] 见\cref{sec:empty-matches}。
+  \item[\escape b{start}] 见\cref{sec:empty-matches}。
+  \item[\escape b{end}] 见\cref{sec:empty-matches}。
+  \item[\escape b{start-half}] 见\cref{sec:empty-matches}。
+  \item[\escape b{end-half}] 见\cref{sec:empty-matches}。
+  % \item[\123]
+  \item[\x hh] 16 进制数 \veta{hh} 表示的字符。
+  \item[\x{\meta{hex num}}] 16 进制数 \meta{hex num} 表示的字符。
+  \item[\u hhhh] 16 进制数 \veta{hhhh} 表示的字符。
+  \item[\u{\meta{hex num}}] 16 进制数 \meta{hex num} 表示的字符。
+  % \item[\U hhhhhhhh]
+  % \item[\U{hex num}]
+  \item[\escape p{\meta{class}}] Unicode 字符类 \meta{class}。
+  \item[\escape P{\meta{class}}] 非 Unicode 字符类 \meta{class}。
+  \item[\escape d] 数字（\p{Nd}）。
+  \item[\escape s] 空白（\p{White\V_SPpace}）。
+  \item[\escape w] 单词字符（\p{Alphabetic} + \p{M} + \escape d + \p{Pc} + \p{Join\V_Control}）。
+  \item[\escape D, \escape S, \escape W] 非 Perl 字符类。
+\end{regexsyntax}
+
+\subsection{ASCII 字符类}
+
+\begin{regexsyntax}
+\item[\texttt{[[:alnum:]]}]    alphanumeric (\verb&[0-9A-Za-z]&)
+\item[\texttt{[[:alpha:]]}]    alphabetic (\verb&[A-Za-z]&)
+\item[\texttt{[[:ascii:]]}]    ASCII (\verb&[\x00-\x7F]&)
+\item[\texttt{[[:blank:]]}]    blank (\verb&[\t ]&)
+\item[\texttt{[[:cntrl:]]}]    control (\verb&[\x00-\x1F\x7F]&)
+\item[\texttt{[[:digit:]]}]    digits (\verb&[0-9]&)
+\item[\texttt{[[:graph:]]}]    graphical (\verb&[!-~]&)
+\item[\texttt{[[:lower:]]}]    lower case (\verb&[a-z]&)
+\item[\texttt{[[:print:]]}]    printable (\verb&[ -~]&)
+\item[\texttt{[[:punct:]]}]    punctuation (\verb&[!-/:-@\[-`{-~]&) \iffalse)\fi%!!!
+\item[\texttt{[[:space:]]}]    whitespace (\verb&[\t\n\v\f\r ]&)
+\item[\texttt{[[:upper:]]}]    upper case (\verb&[A-Z]&)
+\item[\texttt{[[:word:]]}]     word characters (\verb&[0-9A-Za-z_]&)
+\item[\texttt{[[:xdigit:]]}]   hex digit (\verb&[0-9A-Fa-f]&)
+\end{regexsyntax}
+
+\subsection{Unicode 字符类}
+
+\escape p{\meta{class}} 和 \escape P{\meta{class}} 中的 \meta{class} 是某个 Unicode 字符类，
+包括 General Category（\texttt{gc}）、Script（\texttt{sc}）、Script Extensions（\texttt{scx}）、Binary 属性、Non-Binary 属性。
+
+{\def\p{\escape p}
+例如 \p{gc=Letter}，\p{L}，\p L，\p{Script=Han}，\p{Han}，\p{scx=Cakm}，\p{Script_Extensions=Cakm}，\p{Cased}，\p{ASCII} 等。
+}
+
+可参考
+\begin{itemize}
+\item \url{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape}
+\item \url{https://unicode.org/reports/tr18/#General_Category_Property}
+\item \url{https://unicode.org/reports/tr24/}
+\item \url{https://tc39.es/ecma262/#table-binary-unicode-properties}
+\end{itemize}
+等。
 
 
 \section{\TeX 正则表达式}\label{sec:regtex}
